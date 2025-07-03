@@ -24,7 +24,14 @@
                 <button class="back-btn" onclick="app.showHomeScreen()">←</button>
                 <h2 id="song-title"></h2>
             </header>
+            <div class="view-toggle">
+                <button class="view-btn active" onclick="app.showListView()">📋 リスト</button>
+                <button class="view-btn" onclick="app.showSkillTreeView()">🌳 スキルツリー</button>
+            </div>
             <div class="practice-list" id="practice-list">
+            </div>
+            <div class="skill-tree-container" id="skill-tree-container" style="display: none;">
+                <canvas id="skill-tree-canvas"></canvas>
             </div>
             <div class="practice-actions">
                 <button class="add-practice-btn" onclick="app.showAddPracticeModal()">+ れんしゅうこうもくをついか</button>

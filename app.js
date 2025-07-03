@@ -7,6 +7,8 @@ class PianoPracticeApp {
         this.timerRunning = false;
         this.selectedLevel = 0;
         this.selectedAttitude = 0;
+        this.currentView = 'list';
+        this.skillTree = null;
         this.initializeData();
         this.loadSettings();
         this.render();
@@ -245,7 +247,161 @@ class PianoPracticeApp {
         this.currentSongId = songId || this.currentSongId;
         this.hideAllScreens();
         document.getElementById('practice-screen').classList.add('active');
+        if (this.currentView === 'list') {
+            this.renderPracticeList();
+        } else {
+            this.renderSkillTree();
+        }
+    }
+
+    showListView() {
+        this.currentView = 'list';
+        document.getElementById('practice-list').style.display = 'block';
+        document.getElementById('skill-tree-container').style.display = 'none';
+        document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector('[onclick="app.showListView()"]').classList.add('active');
         this.renderPracticeList();
+    }
+
+    showSkillTreeView() {
+        this.currentView = 'tree';
+        document.getElementById('practice-list').style.display = 'none';
+        document.getElementById('skill-tree-container').style.display = 'block';
+        document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector('[onclick="app.showSkillTreeView()"]').classList.add('active');
+        this.renderSkillTree();
+    }
+
+    renderSkillTree() {
+        const canvas = document.getElementById('skill-tree-canvas');
+        const ctx = canvas.getContext('2d');
+        const song = this.data.songs[this.currentSongId];
+        
+        // Canvasのサイズを設定
+        const container = canvas.parentElement;
+        canvas.width = container.clientWidth - 40;
+        canvas.height = 400;
+        
+        // 背景をクリア
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        if (!song || song.practices.length === 0) return;
+        
+        // ノードの配置を計算
+        const nodes = this.calculateNodePositions(song.practices, canvas.width, canvas.height);
+        
+        // 接続線を描画
+        this.drawConnections(ctx, nodes);
+        
+        // ノードを描画
+        nodes.forEach(node => {
+            this.drawNode(ctx, node);
+        });
+        
+        // クリックイベントの設定
+        canvas.onclick = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            nodes.forEach(node => {
+                const distance = Math.sqrt(Math.pow(x - node.x, 2) + Math.pow(y - node.y, 2));
+                if (distance < node.radius) {
+                    this.showEvaluationScreen(node.practice.id);
+                }
+            });
+        };
+    }
+
+    calculateNodePositions(practices, width, height) {
+        const nodes = [];
+        const cols = Math.ceil(Math.sqrt(practices.length));
+        const rows = Math.ceil(practices.length / cols);
+        const cellWidth = width / (cols + 1);
+        const cellHeight = height / (rows + 1);
+        
+        practices.forEach((practice, index) => {
+            const col = index % cols;
+            const row = Math.floor(index / cols);
+            nodes.push({
+                practice: practice,
+                x: cellWidth * (col + 1),
+                y: cellHeight * (row + 1),
+                radius: 40,
+                level: practice.level,
+                isCompleted: practice.isCompleted
+            });
+        });
+        
+        return nodes;
+    }
+
+    drawConnections(ctx, nodes) {
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.lineWidth = 3;
+        
+        for (let i = 0; i < nodes.length - 1; i++) {
+            const current = nodes[i];
+            const next = nodes[i + 1];
+            
+            ctx.beginPath();
+            ctx.moveTo(current.x, current.y);
+            ctx.lineTo(next.x, next.y);
+            ctx.stroke();
+        }
+    }
+
+    drawNode(ctx, node) {
+        const { x, y, radius, practice, level, isCompleted } = node;
+        
+        // ノードの色を決定
+        let fillColor = '#e0e0e0'; // グレー（レベル0）
+        if (isCompleted) {
+            fillColor = '#ffd700'; // ゴールド（マスター）
+        } else if (level > 0) {
+            const intensity = Math.min(level / 50, 1);
+            const r = Math.floor(74 + (255 - 74) * intensity);
+            const g = Math.floor(105 + (215 - 105) * intensity);
+            const b = Math.floor(255 - 255 * intensity);
+            fillColor = `rgb(${r}, ${g}, ${b})`;
+        }
+        
+        // 外側の円（進捗リング）
+        ctx.beginPath();
+        ctx.arc(x, y, radius + 5, 0, 2 * Math.PI);
+        ctx.fillStyle = isCompleted ? '#ffed4e' : '#f0f4ff';
+        ctx.fill();
+        
+        // メインの円
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, 2 * Math.PI);
+        ctx.fillStyle = fillColor;
+        ctx.fill();
+        
+        // 境界線
+        ctx.strokeStyle = isCompleted ? '#ffd700' : '#4a69ff';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        
+        // テキスト（レベル）
+        ctx.fillStyle = level > 30 ? 'white' : '#333';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`Lv.${Math.floor(level)}`, x, y);
+        
+        // タイトル
+        ctx.fillStyle = '#333';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        const title = practice.title.length > 10 ? practice.title.substring(0, 10) + '...' : practice.title;
+        ctx.fillText(title, x, y + radius + 20);
+        
+        // 完了アイコン
+        if (isCompleted) {
+            ctx.font = '24px sans-serif';
+            ctx.fillText('👑', x, y - radius - 15);
+        }
     }
 
     showEvaluationScreen(practiceId) {
@@ -661,7 +817,11 @@ class PianoPracticeApp {
         song.practices.push(newPractice);
         this.saveData();
         this.closeAddPracticeModal();
-        this.renderPracticeList();
+        if (this.currentView === 'list') {
+            this.renderPracticeList();
+        } else {
+            this.renderSkillTree();
+        }
     }
 
     deleteSong(songId) {
@@ -689,7 +849,11 @@ class PianoPracticeApp {
         if (confirm(`「${practice.title}」をけしますか？\nレベル${Math.floor(practice.level)}のきろくもけされます。`)) {
             song.practices = song.practices.filter(p => p.id !== practiceId);
             this.saveData();
-            this.renderPracticeList();
+            if (this.currentView === 'list') {
+                this.renderPracticeList();
+            } else {
+                this.renderSkillTree();
+            }
         }
     }
 
@@ -726,7 +890,11 @@ class PianoPracticeApp {
             practice.description = description;
             this.saveData();
             this.closeEditPracticeModal();
-            this.renderPracticeList();
+            if (this.currentView === 'list') {
+                this.renderPracticeList();
+            } else {
+                this.renderSkillTree();
+            }
         }
     }
 }
