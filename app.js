@@ -138,8 +138,7 @@ class PianoPracticeApp {
     loadSettings() {
         this.settings = {
             geminiApiKey: localStorage.getItem('geminiApiKey') || '',
-            elevenLabsApiKey: localStorage.getItem('elevenLabsApiKey') || '',
-            openaiApiKey: localStorage.getItem('openaiApiKey') || ''
+            elevenLabsApiKey: localStorage.getItem('elevenLabsApiKey') || ''
         };
         
         // キャラクターコレクションをロード
@@ -149,7 +148,6 @@ class PianoPracticeApp {
     saveSettings() {
         const geminiKey = document.getElementById('gemini-api-key').value;
         const elevenLabsKey = document.getElementById('elevenlabs-api-key').value;
-        const openaiKey = document.getElementById('openai-api-key').value;
         
         if (geminiKey) {
             localStorage.setItem('geminiApiKey', geminiKey);
@@ -158,10 +156,6 @@ class PianoPracticeApp {
         if (elevenLabsKey) {
             localStorage.setItem('elevenLabsApiKey', elevenLabsKey);
             this.settings.elevenLabsApiKey = elevenLabsKey;
-        }
-        if (openaiKey) {
-            localStorage.setItem('openaiApiKey', openaiKey);
-            this.settings.openaiApiKey = openaiKey;
         }
         
         alert('せっていをほぞんしました！');
@@ -1279,7 +1273,6 @@ class PianoPracticeApp {
     showSettingsScreen() {
         document.getElementById('gemini-api-key').value = this.settings.geminiApiKey;
         document.getElementById('elevenlabs-api-key').value = this.settings.elevenLabsApiKey;
-        document.getElementById('openai-api-key').value = this.settings.openaiApiKey;
         
         this.hideAllScreens();
         document.getElementById('settings-screen').classList.add('active');
@@ -1556,13 +1549,8 @@ class PianoPracticeApp {
                 document.getElementById('ai-message').textContent = 'メッセージの生成に失敗しました';
             }
             
-            // OpenAI DALL-Eでイラスト生成
-            try {
-                await this.generateCharacterImage(characterData);
-            } catch (error) {
-                console.error('画像生成エラー:', error);
-                document.getElementById('character-image').innerHTML = '<div class="placeholder-image large">🎨</div>';
-            }
+            // キャラクター画像を表示（事前準備済み画像）
+            this.displayCharacterImage(characterData);
             
             // キャラクターをコレクションに保存
             this.saveToCollection(characterData);
@@ -1875,7 +1863,7 @@ class PianoPracticeApp {
         }
     }
     
-    async generateCharacterImage(characterData) {
+    displayCharacterImage(characterData) {
         try {
             // 絵文字ベースのキャラクター表示
             const characterImage = document.getElementById('character-image');
@@ -1926,23 +1914,12 @@ class PianoPracticeApp {
             // コレクション用に絵文字を保存
             characterData.emojiDisplay = `${mainEmoji}${accentEmoji}`;
             
-            // OpenAI APIを試す（オプション）
-            if (window.apiClient && true) { // OpenAI APIを有効化
-                try {
-                    console.log('キャラクターデータ:', characterData);
-                    
-                    // 英語のプロンプトを生成（日本語を含まないように）
-                    const speciesEnglish = this.translateSpeciesToEnglish(characterData.species);
-                    // gpt-image-1は詳細なプロンプトに対応
-                    const prompt = `A friendly cartoon ${speciesEnglish} character playing a grand piano in a magical forest setting. The character has a warm smile and wears a small musical note badge. Soft watercolor art style with pastel pink and blue colors. Child-friendly illustration.`;
-                    
-                    console.log('画像生成プロンプト:', prompt);
-                    const imageUrl = await window.apiClient.generateImage(prompt);
-                    characterImage.innerHTML = `<img src="${imageUrl}" alt="${characterData.name}" />`;
-                    characterData.imageUrl = imageUrl;
-                } catch (error) {
-                    console.log('画像生成をスキップ、絵文字を使用');
-                }
+            // 事前準備済みの画像があれば使用
+            if (characterData.image && characterData.image.includes('images/characters/')) {
+                characterImage.innerHTML = `
+                    <img src="${characterData.image}" alt="${characterData.name}" 
+                         style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover; border: 4px solid #4a69ff;" />
+                `;
             }
         } catch (error) {
             console.error('Character display error:', error);
@@ -1950,37 +1927,6 @@ class PianoPracticeApp {
         }
     }
     
-    translateSpeciesToEnglish(species) {
-        // 日本語の種族名を英語に翻訳
-        const translations = {
-            'カメ': 'turtle',
-            'チョウ': 'butterfly',
-            'カエル': 'frog',
-            'トリ': 'bird',
-            'ウサギ': 'rabbit',
-            'ネコ': 'cat',
-            'イヌ': 'dog',
-            'クマ': 'bear',
-            'キツネ': 'fox',
-            'リス': 'squirrel',
-            'ペンギン': 'penguin',
-            'フクロウ': 'owl',
-            'ドラゴン': 'dragon',
-            'ユニコーン': 'unicorn',
-            'フェアリー': 'fairy',
-            'ロボット': 'robot'
-        };
-        
-        // 種族名から英語を抽出
-        for (const [jp, en] of Object.entries(translations)) {
-            if (species.includes(jp)) {
-                return en;
-            }
-        }
-        
-        // デフォルト
-        return 'magical creature';
-    }
     
     saveToCollection(characterData) {
         const characterId = `char_${Date.now()}`;

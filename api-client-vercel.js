@@ -57,16 +57,6 @@ class APIClient {
         return `data:audio/mpeg;base64,${response.audio}`;
     }
 
-    // OpenAI DALL-E 3でイラスト生成
-    async generateImage(prompt) {
-        const response = await this.callAPI('openai', { prompt });
-        
-        if (response.error) {
-            throw new Error(response.error);
-        }
-        
-        return response.data[0].url;
-    }
 }
 
 // グローバルに利用可能にする
