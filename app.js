@@ -1432,7 +1432,7 @@ class PianoPracticeApp {
         }
     }
     
-    createCharacterConcept(practice, oldLevel, newLevel) {
+    async createCharacterConcept(practice, oldLevel, newLevel) {
         // 練習内容を分析
         const practiceAnalysis = this.analyzePractice(practice);
         
@@ -1444,8 +1444,8 @@ class PianoPracticeApp {
         const creature = creatures[Math.floor(Math.random() * creatures.length)];
         const attribute = attributes[Math.floor(Math.random() * attributes.length)];
         
-        // 名前を生成
-        const name = this.generateCharacterName(practiceAnalysis, creature);
+        // 名前を生成（AI活用）
+        const name = await this.generateCharacterName(practiceAnalysis, creature);
         
         // レア度を決定
         const rarity = this.calculateRarity(newLevel, practice.isCompleted);
@@ -1492,12 +1492,46 @@ class PianoPracticeApp {
         return { tempo, hands, trait, title: practice.title };
     }
     
-    generateCharacterName(analysis, creature) {
+    async generateCharacterName(analysis, creature) {
+        try {
+            // AI活用による動的キャラクター名生成
+            const prompt = `練習情報に基づいて音楽的なキャラクター名を生成してください。
+
+練習内容: ${analysis.title || '不明'}
+特徴: ${analysis.trait || '不明'}
+テンポ: ${analysis.tempo || '不明'}
+手: ${analysis.hands || '不明'}
+生き物: ${creature}
+
+以下の条件でキャラクター名を1つだけ生成してください：
+- 音楽用語（アンダンテ、アレグロ、メロディ、リズムなど）をベースにする
+- 生き物の特徴を反映した可愛い語尾をつける
+- カタカナ6文字以内
+- 子供が覚えやすい響き
+
+例：アンダンテガメ、メロディプルン、リズムピー
+
+キャラクター名のみを回答してください。`;
+
+            const response = await this.apiClient.generateText(prompt);
+            
+            if (response && response.trim()) {
+                return response.trim();
+            }
+        } catch (error) {
+            console.warn('AI character name generation failed:', error);
+        }
+        
+        // フォールバック：従来の方式
+        return this.generateFallbackCharacterName(analysis, creature);
+    }
+
+    generateFallbackCharacterName(analysis, creature) {
         const prefixes = {
             'ゆっくり': ['アンダンテ', 'レガート', 'ラルゴ'],
             'はやく': ['プレスト', 'アレグロ', 'ビバーチェ'],
             'りょうて': ['デュエット', 'ハーモニー', 'アンサンブル'],
-            'ふつう': ['メロディ', 'リズム', 'ソナタ']  // デフォルトを追加
+            'ふつう': ['メロディ', 'リズム', 'ソナタ']
         };
         
         const suffixes = {
@@ -1517,8 +1551,8 @@ class PianoPracticeApp {
         
         // より安全なフォールバック処理
         const defaultPrefixes = ['メロディ', 'リズム', 'ソナタ'];
-        const prefix = prefixes[analysis.tempo] || prefixes['ふつう'] || defaultPrefixes;
-        const selectedPrefix = prefix[Math.floor(Math.random() * prefix.length)];
+        const availablePrefixes = prefixes[analysis.tempo] || prefixes['ふつう'] || defaultPrefixes;
+        const selectedPrefix = availablePrefixes[Math.floor(Math.random() * availablePrefixes.length)];
         const suffix = suffixes[creature] || 'まる';
         
         return selectedPrefix + suffix;
