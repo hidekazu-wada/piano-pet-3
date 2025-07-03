@@ -171,6 +171,7 @@ class PianoPracticeApp {
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: ${progress}%"></div>
                 </div>
+                <button class="delete-song-btn" onclick="event.stopPropagation(); app.deleteSong('${song.id}')">×</button>
             `;
             songCard.onclick = () => this.showPracticeScreen(song.id);
             songList.appendChild(songCard);
@@ -197,6 +198,10 @@ class PianoPracticeApp {
                 <p>${practice.description}</p>
                 <div class="level-badge">
                     レベル ${Math.floor(practice.level)}
+                </div>
+                <div class="practice-actions-btns">
+                    <button class="edit-practice-btn" onclick="event.stopPropagation(); app.showEditPracticeModal('${practice.id}')">✏️</button>
+                    <button class="delete-practice-btn" onclick="event.stopPropagation(); app.deletePractice('${practice.id}')">×</button>
                 </div>
             `;
             practiceCard.onclick = () => this.showEvaluationScreen(practice.id);
@@ -657,6 +662,72 @@ class PianoPracticeApp {
         this.saveData();
         this.closeAddPracticeModal();
         this.renderPracticeList();
+    }
+
+    deleteSong(songId) {
+        const song = this.data.songs[songId];
+        if (!song) return;
+        
+        const practiceCount = song.practices.length;
+        const message = practiceCount > 0 
+            ? `「${song.title}」をけしますか？\n${practiceCount}このれんしゅうこうもくもけされます。`
+            : `「${song.title}」をけしますか？`;
+            
+        if (confirm(message)) {
+            delete this.data.songs[songId];
+            this.saveData();
+            this.renderSongList();
+        }
+    }
+
+    deletePractice(practiceId) {
+        const song = this.data.songs[this.currentSongId];
+        const practice = song.practices.find(p => p.id === practiceId);
+        
+        if (!practice) return;
+        
+        if (confirm(`「${practice.title}」をけしますか？\nレベル${Math.floor(practice.level)}のきろくもけされます。`)) {
+            song.practices = song.practices.filter(p => p.id !== practiceId);
+            this.saveData();
+            this.renderPracticeList();
+        }
+    }
+
+    showEditPracticeModal(practiceId) {
+        const song = this.data.songs[this.currentSongId];
+        const practice = song.practices.find(p => p.id === practiceId);
+        
+        if (!practice) return;
+        
+        this.editingPracticeId = practiceId;
+        document.getElementById('edit-practice-title').value = practice.title;
+        document.getElementById('edit-practice-description').value = practice.description;
+        document.getElementById('edit-practice-modal').classList.add('active');
+    }
+
+    closeEditPracticeModal() {
+        document.getElementById('edit-practice-modal').classList.remove('active');
+        this.editingPracticeId = null;
+    }
+
+    updatePractice() {
+        if (!this.editingPracticeId) return;
+        
+        const title = document.getElementById('edit-practice-title').value.trim();
+        const description = document.getElementById('edit-practice-description').value.trim();
+        
+        if (!title) return;
+        
+        const song = this.data.songs[this.currentSongId];
+        const practice = song.practices.find(p => p.id === this.editingPracticeId);
+        
+        if (practice) {
+            practice.title = title;
+            practice.description = description;
+            this.saveData();
+            this.closeEditPracticeModal();
+            this.renderPracticeList();
+        }
     }
 }
 

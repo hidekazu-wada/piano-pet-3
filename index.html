@@ -206,6 +206,22 @@
                 </div>
             </div>
         </div>
+
+        <div id="edit-practice-modal" class="modal">
+            <div class="modal-content">
+                <h3>れんしゅうこうもくをへんしゅう</h3>
+                <div class="modal-form">
+                    <label>れんしゅうのなまえ</label>
+                    <input type="text" id="edit-practice-title" placeholder="れい: 1だんめ りょうてでゆっくり">
+                    <label>せつめい</label>
+                    <input type="text" id="edit-practice-description" placeholder="れい: テンポ60でただしく">
+                    <div class="modal-buttons">
+                        <button onclick="app.closeEditPracticeModal()">キャンセル</button>
+                        <button class="primary" onclick="app.updatePractice()">こうしん</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>

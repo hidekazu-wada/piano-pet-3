@@ -70,10 +70,23 @@ h2 {
     margin-bottom: 30px;
 }
 
-.song-card, .practice-card {
+.song-card {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     padding: 25px;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.practice-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px;
+    padding-bottom: 55px;
+    min-height: 120px;
     border-radius: 15px;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
@@ -89,6 +102,75 @@ h2 {
 .song-card h3, .practice-card h3 {
     font-size: 1.5rem;
     margin-bottom: 10px;
+}
+
+.delete-song-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.8);
+    color: #ff6b6b;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-song-btn:hover {
+    background-color: #ff6b6b;
+    color: white;
+    transform: scale(1.1);
+}
+
+.practice-actions-btns {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 5px;
+    z-index: 10;
+}
+
+.edit-practice-btn, .delete-practice-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: none;
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-practice-btn {
+    color: #4a69ff;
+}
+
+.edit-practice-btn:hover {
+    background-color: #4a69ff;
+    color: white;
+    transform: scale(1.1);
+}
+
+.delete-practice-btn {
+    color: #ff6b6b;
+}
+
+.delete-practice-btn:hover {
+    background-color: #ff6b6b;
+    color: white;
+    transform: scale(1.1);
 }
 
 .song-card .progress-bar {
@@ -107,7 +189,7 @@ h2 {
 
 .practice-card .level-badge {
     position: absolute;
-    top: 15px;
+    bottom: 15px;
     right: 15px;
     background-color: rgba(255, 255, 255, 0.9);
     color: #333;
@@ -168,6 +250,8 @@ h2 {
     font-size: 1rem;
     padding: 8px 20px;
     box-shadow: 0 3px 10px rgba(255, 215, 0, 0.4);
+    bottom: 15px;
+    right: 15px;
 }
 
 .practice-divider {
@@ -206,7 +290,7 @@ h2 {
 
 .reopen-btn {
     position: absolute;
-    bottom: 15px;
+    top: 50px;
     right: 15px;
     background-color: white;
     color: #d4a017;
