@@ -40,12 +40,11 @@ export default async function handler(req, res) {
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'dall-e-3',
+          model: 'gpt-image-1',  // 最新モデルに変更
           prompt: prompt,
           n: 1,
           size: '1024x1024',
-          quality: 'standard',
-          style: 'vivid'
+          response_format: 'b64_json'  // gpt-image-1はbase64固定
         })
       }
     );
@@ -57,7 +56,18 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    res.status(200).json(data);
+    
+    // gpt-image-1はbase64で返すので、URLに変換
+    if (data.data && data.data[0] && data.data[0].b64_json) {
+      // base64データをそのまま返す（フロントエンドで処理）
+      res.status(200).json({
+        data: [{
+          url: `data:image/png;base64,${data.data[0].b64_json}`
+        }]
+      });
+    } else {
+      res.status(200).json(data);
+    }
   } catch (error) {
     console.error('OpenAI API error:', error);
     res.status(500).json({ 

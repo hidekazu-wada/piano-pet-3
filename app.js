@@ -1654,8 +1654,8 @@ class PianoPracticeApp {
                     
                     // 英語のプロンプトを生成（日本語を含まないように）
                     const speciesEnglish = this.translateSpeciesToEnglish(characterData.species);
-                    // よりシンプルなプロンプト（Ghibliなどの固有名詞を避ける）
-                    const prompt = `A cute cartoon ${speciesEnglish} playing piano, colorful fantasy art style, soft pastel colors`;
+                    // gpt-image-1は詳細なプロンプトに対応
+                    const prompt = `A friendly cartoon ${speciesEnglish} character playing a grand piano in a magical forest setting. The character has a warm smile and wears a small musical note badge. Soft watercolor art style with pastel pink and blue colors. Child-friendly illustration.`;
                     
                     console.log('画像生成プロンプト:', prompt);
                     const imageUrl = await window.apiClient.generateImage(prompt);
