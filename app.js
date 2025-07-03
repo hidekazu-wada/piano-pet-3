@@ -1648,7 +1648,7 @@ class PianoPracticeApp {
             characterData.emojiDisplay = `${mainEmoji}${accentEmoji}`;
             
             // OpenAI APIを試す（オプション）
-            if (window.apiClient && false) { // 一時的に無効化
+            if (window.apiClient && true) { // OpenAI APIを有効化
                 try {
                     const prompt = `A cute fantasy creature that is ${characterData.species}, 
                         playing music with a small Japanese girl at a piano, 
