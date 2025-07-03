@@ -1405,3 +1405,241 @@ h2 {
     margin-bottom: 20px;
     line-height: 1.6;
 }
+
+/* キャラクター図鑑のスタイル */
+.character-book-container {
+    margin: 20px;
+    background-color: #f8f9ff;
+    border-radius: 15px;
+    padding: 20px;
+    min-height: 600px;
+}
+
+.character-book-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.character-book-header h3 {
+    color: #4a69ff;
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+}
+
+.completion-rate {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.character-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.character-card {
+    background-color: white;
+    border-radius: 15px;
+    padding: 15px;
+    text-align: center;
+    border: 2px solid #e5e7eb;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.character-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.character-card.collected {
+    border-color: #10b981;
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+}
+
+.character-card.common {
+    border-color: #9CA3AF;
+}
+
+.character-card.rare {
+    border-color: #3B82F6;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+.character-card.super-rare {
+    border-color: #8B5CF6;
+    background: linear-gradient(135deg, #e9d5ff 0%, #ddd6fe 100%);
+}
+
+.character-card.legendary {
+    border-color: #F59E0B;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    animation: legendary-glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes legendary-glow {
+    from {
+        box-shadow: 0 5px 15px rgba(245, 158, 11, 0.3);
+    }
+    to {
+        box-shadow: 0 5px 25px rgba(245, 158, 11, 0.6);
+    }
+}
+
+.character-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin: 0 auto 10px;
+    background-color: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    border: 3px solid #e5e7eb;
+}
+
+.character-card.collected .character-image {
+    background-size: cover;
+    background-position: center;
+    border-color: #10b981;
+}
+
+.character-name {
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+    color: #374151;
+}
+
+.character-rarity {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.character-card.common .character-rarity {
+    color: #6B7280;
+}
+
+.character-card.rare .character-rarity {
+    color: #2563EB;
+}
+
+.character-card.super-rare .character-rarity {
+    color: #7C3AED;
+}
+
+.character-card.legendary .character-rarity {
+    color: #D97706;
+}
+
+.character-mystery {
+    background: linear-gradient(135deg, #f3f4f6 0%, #d1d5db 100%);
+    color: #9CA3AF;
+}
+
+.character-mystery .character-image {
+    font-size: 2.5rem;
+}
+
+.character-detail-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.character-detail-content {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 400px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    text-align: center;
+}
+
+.character-detail-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    margin: 0 auto 20px;
+    background-size: cover;
+    background-position: center;
+    border: 4px solid #e5e7eb;
+}
+
+.character-detail-name {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #374151;
+}
+
+.character-detail-species {
+    color: #6B7280;
+    margin-bottom: 20px;
+}
+
+.character-detail-description {
+    background-color: #f9fafb;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    line-height: 1.6;
+    color: #374151;
+}
+
+.character-detail-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.character-stat {
+    background-color: #f3f4f6;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.character-stat-label {
+    font-weight: bold;
+    color: #6B7280;
+    display: block;
+    font-size: 0.8rem;
+    margin-bottom: 2px;
+}
+
+.close-detail-btn {
+    background-color: #4a69ff;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.close-detail-btn:hover {
+    background-color: #3c5bff;
+    transform: translateY(-2px);
+}

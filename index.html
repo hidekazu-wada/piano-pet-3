@@ -39,6 +39,9 @@
           <button class="view-btn" onclick="app.showSkillTreeView()">
             🌳 スキルツリー
           </button>
+          <button class="view-btn" onclick="app.showCharacterBookView()">
+            📖 図鑑
+          </button>
         </div>
         <div class="practice-list" id="practice-list"></div>
         <div
@@ -47,6 +50,13 @@
           style="display: none"
         >
           <canvas id="skill-tree-canvas"></canvas>
+        </div>
+        <div class="character-book-container" id="character-book-container" style="display: none">
+          <div class="character-book-header">
+            <h3>🎵 ピアノペット図鑑 🎵</h3>
+            <div class="completion-rate" id="completion-rate"></div>
+          </div>
+          <div class="character-grid" id="character-grid"></div>
         </div>
         <div class="practice-actions">
           <button class="add-practice-btn" onclick="app.showAddPracticeModal()">
@@ -401,6 +411,7 @@
     </div>
 
     <script src="api-client-vercel.js"></script>
+    <script type="module" src="characters.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

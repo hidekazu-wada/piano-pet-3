@@ -14,8 +14,10 @@ class PianoPracticeApp {
         this.harvestPracticeId = null;
         this.animationQueue = [];
         this.previousTreeState = null;
+        this.collectedCharacters = new Set();
         this.initializeData();
         this.loadSettings();
+        this.loadCharacterData();
         this.render();
     }
 
@@ -166,6 +168,37 @@ class PianoPracticeApp {
         this.showHomeScreen();
     }
 
+    loadCharacterData() {
+        // 収集済みキャラクターをロード
+        const savedCharacters = localStorage.getItem('collectedCharacters');
+        if (savedCharacters) {
+            this.collectedCharacters = new Set(JSON.parse(savedCharacters));
+        }
+        
+        // キャラクターデータベースをロード（非同期で読み込む）
+        this.loadCharacterDatabase();
+    }
+
+    async loadCharacterDatabase() {
+        try {
+            const charactersModule = await import('./characters.js');
+            this.CHARACTER_DATABASE = charactersModule.CHARACTER_DATABASE;
+            this.RARITY_WEIGHTS = charactersModule.RARITY_WEIGHTS;
+            this.TOTAL_CHARACTERS = charactersModule.TOTAL_CHARACTERS;
+            this.getCharacterById = charactersModule.getCharacterById;
+            this.selectRandomCharacter = charactersModule.selectRandomCharacter;
+        } catch (error) {
+            console.error('キャラクターデータベースの読み込みに失敗:', error);
+            // フォールバック用のダミーデータ
+            this.CHARACTER_DATABASE = { common: [], rare: [], superRare: [], legendary: [] };
+            this.TOTAL_CHARACTERS = 0;
+        }
+    }
+
+    saveCharacterData() {
+        localStorage.setItem('collectedCharacters', JSON.stringify([...this.collectedCharacters]));
+    }
+
     render() {
         this.renderSongList();
     }
@@ -288,6 +321,113 @@ class PianoPracticeApp {
         this.processAnimationQueue();
         
         this.renderSkillTree();
+    }
+
+    showCharacterBookView() {
+        this.currentView = 'character-book';
+        document.getElementById('practice-list').style.display = 'none';
+        document.getElementById('skill-tree-container').style.display = 'none';
+        document.getElementById('character-book-container').style.display = 'block';
+        document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector('[onclick="app.showCharacterBookView()"]').classList.add('active');
+        this.renderCharacterBook();
+    }
+
+    renderCharacterBook() {
+        const grid = document.getElementById('character-grid');
+        const completionRate = document.getElementById('completion-rate');
+        
+        if (!grid || !completionRate) return;
+        
+        // Clear existing content
+        grid.innerHTML = '';
+        
+        if (!this.CHARACTER_DATABASE) {
+            grid.innerHTML = '<div class="loading-message">キャラクターデータ読み込み中...</div>';
+            return;
+        }
+        
+        // 全キャラクターを表示
+        const allCharacters = [
+            ...this.CHARACTER_DATABASE.common,
+            ...this.CHARACTER_DATABASE.rare,
+            ...this.CHARACTER_DATABASE.superRare,
+            ...this.CHARACTER_DATABASE.legendary
+        ];
+        
+        // コンプリート率を計算
+        const collectedCount = this.collectedCharacters.size;
+        const totalCount = allCharacters.length;
+        const completionPercentage = totalCount > 0 ? Math.round((collectedCount / totalCount) * 100) : 0;
+        
+        completionRate.textContent = `${collectedCount}/${totalCount} (${completionPercentage}%)`;
+        
+        // キャラクターカードを生成
+        allCharacters.forEach(character => {
+            const isCollected = this.collectedCharacters.has(character.id);
+            const characterCard = document.createElement('div');
+            characterCard.className = `character-card ${character.rarity} ${isCollected ? 'collected' : 'character-mystery'}`;
+            
+            if (isCollected) {
+                characterCard.innerHTML = `
+                    <div class="character-image" style="background-image: url('${character.image}')"></div>
+                    <div class="character-name">${character.name}</div>
+                    <div class="character-rarity">${character.rarity}</div>
+                `;
+                characterCard.onclick = () => this.showCharacterDetail(character);
+            } else {
+                characterCard.innerHTML = `
+                    <div class="character-image">❓</div>
+                    <div class="character-name">???</div>
+                    <div class="character-rarity">${character.rarity}</div>
+                `;
+            }
+            
+            grid.appendChild(characterCard);
+        });
+    }
+
+    showCharacterDetail(character) {
+        // キャラクター詳細モーダルを表示
+        const modal = document.createElement('div');
+        modal.className = 'character-detail-modal';
+        modal.innerHTML = `
+            <div class="character-detail-content">
+                <div class="character-detail-image" style="background-image: url('${character.image}')"></div>
+                <div class="character-detail-name">${character.name}</div>
+                <div class="character-detail-species">${character.species} - ${character.attribute}</div>
+                <div class="character-detail-description">${character.description}</div>
+                <div class="character-detail-stats">
+                    <div class="character-stat">
+                        <span class="character-stat-label">性格</span>
+                        ${character.personality}
+                    </div>
+                    <div class="character-stat">
+                        <span class="character-stat-label">生息地</span>
+                        ${character.habitat}
+                    </div>
+                    <div class="character-stat">
+                        <span class="character-stat-label">好きな調</span>
+                        ${character.favoriteScale}
+                    </div>
+                    <div class="character-stat">
+                        <span class="character-stat-label">能力</span>
+                        ${character.ability}
+                    </div>
+                </div>
+                <div class="detail-catchphrase">${character.catchphrase}</div>
+                <button class="close-detail-btn" onclick="this.parentElement.parentElement.remove()">とじる</button>
+            </div>
+        `;
+        
+        // クリックで閉じる
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        };
+        
+        document.body.appendChild(modal);
     }
 
     renderSkillTree() {
@@ -1433,32 +1573,50 @@ class PianoPracticeApp {
     }
     
     async createCharacterConcept(practice, oldLevel, newLevel) {
+        // CHARACTER_DATABASEから未取得のキャラクターをランダム選択
+        const excludeIds = [...this.collectedCharacters];
+        const selectedCharacter = this.selectRandomCharacter(excludeIds);
+        
+        if (!selectedCharacter) {
+            // 全てのキャラクターが取得済みの場合は、任意のキャラクターを選択
+            const allCharacters = [
+                ...this.CHARACTER_DATABASE.common,
+                ...this.CHARACTER_DATABASE.rare,
+                ...this.CHARACTER_DATABASE.superRare,
+                ...this.CHARACTER_DATABASE.legendary
+            ];
+            const randomIndex = Math.floor(Math.random() * allCharacters.length);
+            const fallbackCharacter = allCharacters[randomIndex];
+            
+            return {
+                ...fallbackCharacter,
+                level: newLevel,
+                date: new Date().toLocaleDateString('ja-JP'),
+                isAlreadyCollected: true
+            };
+        }
+        
+        // 選択されたキャラクターを収集済みセットに追加
+        this.collectedCharacters.add(selectedCharacter.id);
+        
+        // キャラクターデータを保存
+        this.saveCharacterData();
+        
         // 練習内容を分析
         const practiceAnalysis = this.analyzePractice(practice);
         
-        // キャラクターの要素を組み合わせ
-        const creatures = ['蝶', '竜', 'クラゲ', '鳥', 'キノコ', '花', '雲', '星', '結晶', 'カメ', 'ウサギ', 'クワガタ'];
-        const attributes = ['虹色の', '光る', '歌う', '踊る', '浮遊する', '変身する', '音符の'];
-        
-        // ランダムに選択
-        const creature = creatures[Math.floor(Math.random() * creatures.length)];
-        const attribute = attributes[Math.floor(Math.random() * attributes.length)];
-        
-        // 名前を生成（AI活用）
-        const name = await this.generateCharacterName(practiceAnalysis, creature);
-        
-        // レア度を決定
-        const rarity = this.calculateRarity(newLevel, practice.isCompleted);
+        // AIでキャッチフレーズと能力を生成
+        const aiCatchphrase = await this.generateCatchphrase(selectedCharacter, practiceAnalysis);
+        const aiAbility = await this.generateAbility(selectedCharacter, practiceAnalysis);
         
         return {
-            name: name,
-            species: `${attribute}${practiceAnalysis.trait}${creature}`,
-            catchphrase: this.generateCatchphrase(practiceAnalysis, creature),
-            ability: this.generateAbility(practiceAnalysis),
-            rarity: rarity,
-            practiceContext: practiceAnalysis,
+            ...selectedCharacter,
             level: newLevel,
-            date: new Date().toLocaleDateString('ja-JP')
+            date: new Date().toLocaleDateString('ja-JP'),
+            practiceContext: practiceAnalysis,
+            isAlreadyCollected: false,
+            dynamicCatchphrase: aiCatchphrase,
+            dynamicAbility: aiAbility
         };
     }
     
@@ -1558,25 +1716,109 @@ class PianoPracticeApp {
         return selectedPrefix + suffix;
     }
     
-    generateCatchphrase(analysis, creature) {
+    async generateCatchphrase(character, analysis) {
+        try {
+            const prompt = `キャラクター情報と練習内容に基づいてキャッチフレーズを生成してください。
+
+キャラクター：
+名前: ${character.name}
+種族: ${character.species}
+属性: ${character.attribute}
+性格: ${character.personality}
+
+練習内容：
+曲: ${analysis.title || '不明'}
+特徴: ${analysis.trait || '不明'}
+テンポ: ${analysis.tempo || '不明'}
+手: ${analysis.hands || '不明'}
+
+以下の条件でキャッチフレーズを1つ生成してください：
+- キャラクターの性格と種族を反映
+- 練習内容に関連した内容
+- 子供向けで親しみやすい口調
+- 30文字以内
+- 語尾はキャラクターらしく
+
+例：「メロディニャン♪ やさしい気持ちで弾くニャン」
+
+キャッチフレーズのみを回答してください。`;
+
+            const response = await this.apiClient.generateText(prompt);
+            
+            if (response && response.trim()) {
+                return response.trim();
+            }
+        } catch (error) {
+            console.warn('AI catchphrase generation failed:', error);
+        }
+        
+        // フォールバック：従来の方式
+        return this.generateFallbackCatchphrase(character, analysis);
+    }
+
+    generateFallbackCatchphrase(character, analysis) {
         const phrases = {
-            'カメ': `いそがば まわれ～♪ ${analysis.tempo}が いちばん はやいんだカメ～`,
-            'ウサギ': `ぴょんぴょん ${analysis.hands}で ひけるように なったピョン！`,
-            '蝶': `ひらひら～ ${analysis.trait}はねで とんでみるトンボ～`,
-            'default': `${analysis.tempo} ${analysis.hands}で がんばるぞ～♪`
+            'カメ': `のんびり♪ ${analysis.tempo}でコツコツやるガメ～`,
+            'ウサギ': `ぴょんぴょん♪ ${analysis.hands}で跳ねるように弾くピョン！`,
+            '蝶': `ひらひら♪ ${analysis.trait}で美しく舞うトンボ～`,
+            'ネコ': `にゃーん♪ ${analysis.tempo}で気持ちよく弾くニャン`,
+            'default': `${analysis.trait}で がんばるぞ～♪`
         };
         
-        return phrases[creature] || phrases['default'];
+        return phrases[character.species] || phrases['default'];
     }
     
-    generateAbility(analysis) {
+    async generateAbility(character, analysis) {
+        try {
+            const prompt = `キャラクター情報と練習内容に基づいて特殊能力を生成してください。
+
+キャラクター：
+名前: ${character.name}
+種族: ${character.species}
+属性: ${character.attribute}
+性格: ${character.personality}
+既存能力: ${character.ability}
+
+練習内容：
+曲: ${analysis.title || '不明'}
+特徴: ${analysis.trait || '不明'}
+テンポ: ${analysis.tempo || '不明'}
+手: ${analysis.hands || '不明'}
+
+以下の条件で特殊能力を1つ生成してください：
+- キャラクターの種族と属性を反映
+- 練習内容に役立つ能力
+- ファンタジックで楽しい名前
+- 「○○の術」「○○マジック」などの形式
+- 20文字以内
+
+例：「メロディ記憶の術」「羽ばたきテンポ術」
+
+能力名のみを回答してください。`;
+
+            const response = await this.apiClient.generateText(prompt);
+            
+            if (response && response.trim()) {
+                return response.trim();
+            }
+        } catch (error) {
+            console.warn('AI ability generation failed:', error);
+        }
+        
+        // フォールバック：従来の方式
+        return this.generateFallbackAbility(character, analysis);
+    }
+
+    generateFallbackAbility(character, analysis) {
         const abilities = {
             'ゆっくり': '時間をスローにする「スローモーション音符」',
             'はやく': '指を軽くする「羽ばたき奏法」',
-            'りょうて': '左右の手をシンクロさせる「鏡の術」'
+            'りょうて': '左右の手をシンクロさせる「鏡の術」',
+            'メロディ': '美しい音色を奏でる「メロディ魔法」',
+            'ハーモニー': '和音を響かせる「ハーモニー術」'
         };
         
-        return abilities[analysis.tempo] || abilities[analysis.hands] || '音楽の魔法';
+        return abilities[analysis.tempo] || abilities[analysis.hands] || abilities[character.attribute] || '音楽の魔法';
     }
     
     calculateRarity(level, isCompleted) {
