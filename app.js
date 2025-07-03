@@ -136,13 +136,18 @@ class PianoPracticeApp {
     loadSettings() {
         this.settings = {
             geminiApiKey: localStorage.getItem('geminiApiKey') || '',
-            elevenLabsApiKey: localStorage.getItem('elevenLabsApiKey') || ''
+            elevenLabsApiKey: localStorage.getItem('elevenLabsApiKey') || '',
+            openaiApiKey: localStorage.getItem('openaiApiKey') || ''
         };
+        
+        // キャラクターコレクションをロード
+        this.characterCollection = JSON.parse(localStorage.getItem('characterCollection') || '{}');
     }
 
     saveSettings() {
         const geminiKey = document.getElementById('gemini-api-key').value;
         const elevenLabsKey = document.getElementById('elevenlabs-api-key').value;
+        const openaiKey = document.getElementById('openai-api-key').value;
         
         if (geminiKey) {
             localStorage.setItem('geminiApiKey', geminiKey);
@@ -151,6 +156,10 @@ class PianoPracticeApp {
         if (elevenLabsKey) {
             localStorage.setItem('elevenLabsApiKey', elevenLabsKey);
             this.settings.elevenLabsApiKey = elevenLabsKey;
+        }
+        if (openaiKey) {
+            localStorage.setItem('openaiApiKey', openaiKey);
+            this.settings.openaiApiKey = openaiKey;
         }
         
         alert('せっていをほぞんしました！');
@@ -1130,9 +1139,113 @@ class PianoPracticeApp {
     showSettingsScreen() {
         document.getElementById('gemini-api-key').value = this.settings.geminiApiKey;
         document.getElementById('elevenlabs-api-key').value = this.settings.elevenLabsApiKey;
+        document.getElementById('openai-api-key').value = this.settings.openaiApiKey;
         
         this.hideAllScreens();
         document.getElementById('settings-screen').classList.add('active');
+    }
+    
+    showCollectionScreen() {
+        this.hideAllScreens();
+        document.getElementById('collection-screen').classList.add('active');
+        this.renderCollection();
+    }
+    
+    renderCollection() {
+        const grid = document.getElementById('collection-grid');
+        grid.innerHTML = '';
+        
+        const collectionCount = Object.keys(this.characterCollection).length;
+        document.getElementById('collection-count').textContent = collectionCount;
+        
+        // キャラクターを日付順にソート
+        const sortedCharacters = Object.entries(this.characterCollection)
+            .sort((a, b) => new Date(b[1].date) - new Date(a[1].date));
+        
+        sortedCharacters.forEach(([id, character]) => {
+            const card = document.createElement('div');
+            card.className = 'collection-card';
+            card.onclick = () => this.showCharacterDetail(id);
+            
+            const imageHtml = character.imageUrl 
+                ? `<img src="${character.imageUrl}" alt="${character.name}">` 
+                : `<div class="placeholder-image">🎵</div>`;
+            
+            card.innerHTML = `
+                <div class="collection-image">
+                    ${imageHtml}
+                </div>
+                <h4>${character.name}</h4>
+                <p class="collection-species">${character.species}</p>
+                <p class="collection-rarity">${character.rarity}</p>
+                <span class="new-badge" style="display: ${this.isNewCharacter(id) ? 'block' : 'none'};">NEW!</span>
+            `;
+            
+            grid.appendChild(card);
+        });
+        
+        // 未発見キャラクターのヒント
+        if (collectionCount < 10) {
+            const hint = document.createElement('div');
+            hint.className = 'collection-card locked';
+            hint.innerHTML = `
+                <div class="collection-image">
+                    <div class="placeholder-image">🔒</div>
+                </div>
+                <h4>???</h4>
+                <p class="collection-hint">もっとレベルをあげてみよう！</p>
+            `;
+            grid.appendChild(hint);
+        }
+    }
+    
+    isNewCharacter(characterId) {
+        const viewedCharacters = JSON.parse(localStorage.getItem('viewedCharacters') || '[]');
+        return !viewedCharacters.includes(characterId);
+    }
+    
+    showCharacterDetail(characterId) {
+        const character = this.characterCollection[characterId];
+        if (!character) return;
+        
+        // 既読マーク
+        const viewedCharacters = JSON.parse(localStorage.getItem('viewedCharacters') || '[]');
+        if (!viewedCharacters.includes(characterId)) {
+            viewedCharacters.push(characterId);
+            localStorage.setItem('viewedCharacters', JSON.stringify(viewedCharacters));
+        }
+        
+        // 詳細情報を表示
+        document.getElementById('detail-name').textContent = character.name;
+        document.getElementById('detail-species').textContent = character.species;
+        document.getElementById('detail-date').textContent = character.date;
+        document.getElementById('detail-rarity').textContent = character.rarity;
+        document.getElementById('detail-ability').textContent = character.ability;
+        document.getElementById('detail-catchphrase').textContent = character.catchphrase;
+        document.getElementById('detail-message').textContent = character.message || 'メッセージなし';
+        
+        const detailImage = document.getElementById('detail-image');
+        if (character.imageUrl) {
+            detailImage.innerHTML = `<img src="${character.imageUrl}" alt="${character.name}">`;
+        } else {
+            detailImage.innerHTML = `<div class="placeholder-image large">🎵</div>`;
+        }
+        
+        this.currentDetailCharacter = character;
+        document.getElementById('character-detail-modal').classList.add('active');
+    }
+    
+    closeCharacterDetail() {
+        document.getElementById('character-detail-modal').classList.remove('active');
+        this.renderCollection(); // NEW!バッジを更新
+    }
+    
+    playCharacterVoice() {
+        // キャラクターの声を再生（今後実装予定）
+        if (this.currentDetailCharacter && this.currentDetailCharacter.audioUrl) {
+            const audio = new Audio(this.currentDetailCharacter.audioUrl);
+            audio.play();
+        }
     }
 
     hideAllScreens() {
@@ -1243,8 +1356,9 @@ class PianoPracticeApp {
         
         modal.classList.add('active');
         
-        if (this.settings.geminiApiKey && this.settings.elevenLabsApiKey) {
-            this.generateAIMessage(practice, oldLevel, newLevel);
+        // AI機能が有効な場合
+        if (this.settings.geminiApiKey || this.settings.openaiApiKey) {
+            this.generateFantasyCharacter(practice, oldLevel, newLevel);
         }
     }
 
@@ -1271,9 +1385,233 @@ class PianoPracticeApp {
         }
     }
 
-    async generateAIMessage(practice, oldLevel, newLevel) {
-        // この機能は Step 4 で実装します
-        console.log('AI message generation will be implemented in Step 4');
+    async generateFantasyCharacter(practice, oldLevel, newLevel) {
+        try {
+            // キャラクター情報を生成
+            const characterData = await this.createCharacterConcept(practice, oldLevel, newLevel);
+            
+            // キャラクター情報を表示
+            this.displayCharacterInfo(characterData);
+            
+            // Gemini APIでメッセージ生成
+            const aiMessage = await this.generateAIMessage(characterData, practice, newLevel);
+            if (aiMessage) {
+                document.getElementById('ai-message').textContent = aiMessage;
+                
+                // 11Labsで音声生成
+                await this.generateVoice(aiMessage);
+            }
+            
+            // OpenAI DALL-Eでイラスト生成
+            await this.generateCharacterImage(characterData);
+            
+            // キャラクターをコレクションに保存
+            this.saveToCollection(characterData);
+            
+        } catch (error) {
+            console.error('Character generation error:', error);
+        }
+    }
+    
+    createCharacterConcept(practice, oldLevel, newLevel) {
+        // 練習内容を分析
+        const practiceAnalysis = this.analyzePractice(practice);
+        
+        // キャラクターの要素を組み合わせ
+        const creatures = ['蝶', '竜', 'クラゲ', '鳥', 'キノコ', '花', '雲', '星', '結晶', 'カメ', 'ウサギ', 'クワガタ'];
+        const attributes = ['虹色の', '光る', '歌う', '踊る', '浮遊する', '変身する', '音符の'];
+        
+        // ランダムに選択
+        const creature = creatures[Math.floor(Math.random() * creatures.length)];
+        const attribute = attributes[Math.floor(Math.random() * attributes.length)];
+        
+        // 名前を生成
+        const name = this.generateCharacterName(practiceAnalysis, creature);
+        
+        // レア度を決定
+        const rarity = this.calculateRarity(newLevel, practice.isCompleted);
+        
+        return {
+            name: name,
+            species: `${attribute}${practiceAnalysis.trait}${creature}`,
+            catchphrase: this.generateCatchphrase(practiceAnalysis, creature),
+            ability: this.generateAbility(practiceAnalysis),
+            rarity: rarity,
+            practiceContext: practiceAnalysis,
+            level: newLevel,
+            date: new Date().toLocaleDateString('ja-JP')
+        };
+    }
+    
+    analyzePractice(practice) {
+        const title = practice.title.toLowerCase();
+        const description = practice.description.toLowerCase();
+        
+        let tempo = 'ふつう';
+        let hands = 'かたて';
+        let trait = '音楽の';
+        
+        // テンポ判定
+        if (title.includes('ゆっくり') || description.includes('テンポ60')) {
+            tempo = 'ゆっくり';
+            trait = 'じかんをあやつる';
+        } else if (title.includes('はやく') || description.includes('テンポ120')) {
+            tempo = 'はやく';
+            trait = 'いなずまの';
+        }
+        
+        // 手の判定
+        if (title.includes('りょうて')) {
+            hands = 'りょうて';
+            trait = 'ハーモニーをかなでる';
+        } else if (title.includes('みぎて')) {
+            hands = 'みぎて';
+        } else if (title.includes('ひだりて')) {
+            hands = 'ひだりて';
+        }
+        
+        return { tempo, hands, trait, title: practice.title };
+    }
+    
+    generateCharacterName(analysis, creature) {
+        const prefixes = {
+            'ゆっくり': ['アンダンテ', 'レガート', 'ラルゴ'],
+            'はやく': ['プレスト', 'アレグロ', 'ビバーチェ'],
+            'りょうて': ['デュエット', 'ハーモニー', 'アンサンブル']
+        };
+        
+        const suffixes = {
+            'カメ': 'ガメ',
+            'ウサギ': 'ンピョン',
+            '蝶': 'ンボ',
+            '竜': 'ゴン',
+            'クラゲ': 'プルン',
+            '鳥': 'ピー',
+            'キノコ': 'シュルム',
+            '花': 'フロール',
+            '雲': 'モクモク',
+            '星': 'キラリン',
+            '結晶': 'クリスタ',
+            'クワガタ': 'ガタロウ'
+        };
+        
+        const prefix = prefixes[analysis.tempo] || prefixes['ふつう'];
+        const selectedPrefix = prefix[Math.floor(Math.random() * prefix.length)];
+        const suffix = suffixes[creature] || 'まる';
+        
+        return selectedPrefix + suffix;
+    }
+    
+    generateCatchphrase(analysis, creature) {
+        const phrases = {
+            'カメ': `いそがば まわれ～♪ ${analysis.tempo}が いちばん はやいんだカメ～`,
+            'ウサギ': `ぴょんぴょん ${analysis.hands}で ひけるように なったピョン！`,
+            '蝶': `ひらひら～ ${analysis.trait}はねで とんでみるトンボ～`,
+            'default': `${analysis.tempo} ${analysis.hands}で がんばるぞ～♪`
+        };
+        
+        return phrases[creature] || phrases['default'];
+    }
+    
+    generateAbility(analysis) {
+        const abilities = {
+            'ゆっくり': '時間をスローにする「スローモーション音符」',
+            'はやく': '指を軽くする「羽ばたき奏法」',
+            'りょうて': '左右の手をシンクロさせる「鏡の術」'
+        };
+        
+        return abilities[analysis.tempo] || abilities[analysis.hands] || '音楽の魔法';
+    }
+    
+    calculateRarity(level, isCompleted) {
+        if (isCompleted) return '★★★★'; // マスターは伝説
+        if (level >= 20) return '★★★';
+        if (level >= 10) return '★★';
+        return '★';
+    }
+    
+    displayCharacterInfo(characterData) {
+        document.getElementById('character-name').textContent = characterData.name;
+        document.getElementById('character-species').textContent = characterData.species;
+        document.getElementById('character-catchphrase').textContent = `「${characterData.catchphrase}」`;
+    }
+    
+    async generateAIMessage(characterData, practice, newLevel) {
+        try {
+            if (!window.apiClient) {
+                console.error('API client not initialized');
+                return '';
+            }
+            
+            const prompt = `あなたは「${characterData.name}」というキャラクターです。
+                            種族：${characterData.species}
+                            口癖：${characterData.catchphrase}
+                            
+                            小学3年生の「ひなのちゃん」が「${practice.title}」の練習でレベル${newLevel}になりました。
+                            ${practice.isCompleted ? 'マスター達成です！' : ''}
+                            
+                            キャラクターらしいユーモラスな口調で、ひなのちゃんを励ましてください。
+                            次の練習のアドバイスも含めてください。
+                            100文字以内で、子供にわかりやすく。`;
+                            
+            return await window.apiClient.generateMessage(prompt);
+        } catch (error) {
+            console.error('Gemini API error:', error);
+            return '';
+        }
+    }
+    
+    async generateVoice(text) {
+        try {
+            if (!window.apiClient) {
+                console.error('API client not initialized');
+                return;
+            }
+            
+            const audioDataUrl = await window.apiClient.generateVoice(text);
+            this.currentAudio = new Audio(audioDataUrl);
+            this.currentAudio.play();
+            document.getElementById('play-audio-btn').style.display = 'block';
+        } catch (error) {
+            console.error('11Labs API error:', error);
+        }
+    }
+    
+    async generateCharacterImage(characterData) {
+        try {
+            if (!window.apiClient) {
+                console.error('API client not initialized');
+                return;
+            }
+            
+            const prompt = `A cute fantasy creature that is ${characterData.species}, 
+                playing music with a small Japanese girl at a piano, 
+                ${characterData.practiceContext.tempo} tempo atmosphere,
+                soft watercolor anime style, pastel colors with magical glow, 
+                Studio Ghibli inspired, children's book illustration,
+                warm and encouraging expression`;
+            
+            const imageUrl = await window.apiClient.generateImage(prompt);
+            const characterImage = document.getElementById('character-image');
+            characterImage.innerHTML = `<img src="${imageUrl}" alt="${characterData.name}" />`;
+            
+            // コレクション用に画像を保存
+            characterData.imageUrl = imageUrl;
+        } catch (error) {
+            console.error('OpenAI API error:', error);
+        }
+    }
+    
+    saveToCollection(characterData) {
+        const characterId = `char_${Date.now()}`;
+        this.characterCollection[characterId] = characterData;
+        localStorage.setItem('characterCollection', JSON.stringify(this.characterCollection));
+    }
+    
+    playAudioMessage() {
+        if (this.currentAudio) {
+            this.currentAudio.play();
+        }
     }
 
     startTimer() {

@@ -16,7 +16,10 @@
             <div class="song-list" id="song-list">
             </div>
             <button class="add-song-btn" onclick="app.showAddSongModal()">+ あたらしいきょくをついか</button>
-            <button class="settings-btn" onclick="app.showSettingsScreen()">⚙️ せってい</button>
+            <div class="bottom-buttons">
+                <button class="collection-btn" onclick="app.showCollectionScreen()">📖 なかまずかん</button>
+                <button class="settings-btn" onclick="app.showSettingsScreen()">⚙️ せってい</button>
+            </div>
         </div>
 
         <div id="practice-screen" class="screen">
@@ -146,23 +149,45 @@
                 <h2>せってい</h2>
             </header>
             <div class="settings-content">
+                <p style="text-align: center; color: #666; margin-bottom: 20px;">
+                    🌟 Vercelにデプロイされている場合、APIキーは環境変数で管理されています
+                </p>
                 <div class="setting-group">
                     <label>Gemini API キー</label>
-                    <input type="password" id="gemini-api-key" placeholder="API キーを入力">
+                    <input type="password" id="gemini-api-key" placeholder="ローカル開発時のみ必要" disabled>
                 </div>
                 <div class="setting-group">
                     <label>11Labs API キー</label>
-                    <input type="password" id="elevenlabs-api-key" placeholder="API キーを入力">
+                    <input type="password" id="elevenlabs-api-key" placeholder="ローカル開発時のみ必要" disabled>
                 </div>
-                <button class="save-btn" onclick="app.saveSettings()">ほぞん</button>
+                <div class="setting-group">
+                    <label>OpenAI API キー</label>
+                    <input type="password" id="openai-api-key" placeholder="ローカル開発時のみ必要" disabled>
+                </div>
+                <p style="text-align: center; color: #999; font-size: 0.9rem; margin-top: 20px;">
+                    APIキーの設定はVercelの環境変数で行ってください
+                </p>
             </div>
         </div>
 
         <div id="level-up-modal" class="modal">
-            <div class="modal-content">
-                <div class="character-image">🐕</div>
+            <div class="modal-content expanded">
+                <div class="character-section">
+                    <div class="character-image" id="character-image">
+                        <div class="loading-spinner">🌟</div>
+                    </div>
+                    <div class="character-info">
+                        <h4 id="character-name">???</h4>
+                        <p class="character-species" id="character-species">???</p>
+                        <p class="character-catchphrase" id="character-catchphrase">「...」</p>
+                    </div>
+                </div>
                 <h3>レベルアップ！</h3>
                 <p id="level-up-message"></p>
+                <div class="ai-message" id="ai-message"></div>
+                <button class="audio-btn" id="play-audio-btn" onclick="app.playAudioMessage()" style="display: none;">
+                    🔊 もういちど きく
+                </button>
                 <button onclick="app.closeLevelUpModal()">とじる</button>
             </div>
         </div>
@@ -229,8 +254,46 @@
                 </div>
             </div>
         </div>
+
+        <div id="collection-screen" class="screen">
+            <header>
+                <button class="back-btn" onclick="app.showHomeScreen()">←</button>
+                <h2>🎵 おんがくのもり なかまずかん</h2>
+            </header>
+            <div class="collection-stats">
+                <p>はっけんしたなかま: <span id="collection-count">0</span> / ???</p>
+                <div class="rarity-legend">
+                    <span class="rarity-item">⭐ ふつう</span>
+                    <span class="rarity-item">⭐⭐ めずらしい</span>
+                    <span class="rarity-item">⭐⭐⭐ とてもめずらしい</span>
+                    <span class="rarity-item">⭐⭐⭐⭐ でんせつ</span>
+                </div>
+            </div>
+            <div class="collection-grid" id="collection-grid">
+            </div>
+        </div>
+
+        <div id="character-detail-modal" class="modal">
+            <div class="modal-content character-detail">
+                <button class="close-detail-btn" onclick="app.closeCharacterDetail()">×</button>
+                <div class="detail-image" id="detail-image"></div>
+                <h3 id="detail-name"></h3>
+                <p class="detail-species" id="detail-species"></p>
+                <div class="detail-info">
+                    <p class="detail-date">はじめてあった日: <span id="detail-date"></span></p>
+                    <p class="detail-rarity">レア度: <span id="detail-rarity"></span></p>
+                    <p class="detail-ability">とくしゅのうりょく: <span id="detail-ability"></span></p>
+                </div>
+                <blockquote class="detail-catchphrase" id="detail-catchphrase"></blockquote>
+                <div class="detail-message" id="detail-message"></div>
+                <button class="audio-btn" onclick="app.playCharacterVoice()">
+                    🔊 こえをきく
+                </button>
+            </div>
+        </div>
     </div>
 
+    <script src="api-client-vercel.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
