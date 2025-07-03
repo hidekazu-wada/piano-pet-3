@@ -289,7 +289,7 @@ class PianoPracticeApp {
         // Canvasのサイズを設定
         const container = canvas.parentElement;
         canvas.width = container.clientWidth - 40;
-        canvas.height = 500;
+        canvas.height = 700;
         
         // 背景をクリア（空のグラデーション）
         const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
@@ -308,7 +308,7 @@ class PianoPracticeApp {
         const centerX = canvas.width / 2;
         const treeData = {
             x: centerX,
-            y: canvas.height - 30,
+            y: canvas.height - 50,
             level: totalLevel,
             masteredCount: masteredPractices.length,
             totalPractices: song.practices.length,
@@ -318,7 +318,7 @@ class PianoPracticeApp {
         this.drawSongTree(ctx, treeData);
         
         // 練習項目のリストを木の下に表示
-        this.drawPracticeLabels(ctx, song, canvas.height - 30);
+        this.drawPracticeLabels(ctx, song, canvas.height - 50);
         
         // クリックイベントの設定（木全体がクリック可能）
         canvas.onclick = (e) => {
@@ -340,9 +340,23 @@ class PianoPracticeApp {
         // アニメーション中の場合はアニメーションレベルを使用
         const displayLevel = this.animationLevel !== null && this.animationLevel !== undefined ? this.animationLevel : level;
         
-        // 地面を描画
-        ctx.fillStyle = '#8B4513';
-        ctx.fillRect(x - 100, y, 200, 20);
+        // 地面を豪華に描画
+        const groundGradient = ctx.createLinearGradient(x - 150, y, x + 150, y + 30);
+        groundGradient.addColorStop(0, '#654321');
+        groundGradient.addColorStop(0.5, '#8B4513');
+        groundGradient.addColorStop(1, '#654321');
+        ctx.fillStyle = groundGradient;
+        ctx.fillRect(x - 150, y, 300, 30);
+        
+        // 草を描画
+        ctx.strokeStyle = '#228B22';
+        ctx.lineWidth = 2;
+        for (let i = -140; i < 140; i += 10) {
+            ctx.beginPath();
+            ctx.moveTo(x + i, y);
+            ctx.lineTo(x + i + 3, y - 8);
+            ctx.stroke();
+        }
         
         // 木を描画
         if (displayLevel === 0) {
@@ -383,7 +397,7 @@ class PianoPracticeApp {
         ctx.textAlign = 'left';
         
         const startX = 20;
-        let currentY = baseY + 120;
+        let currentY = baseY + 140;
         
         song.practices.forEach((practice, index) => {
             const status = practice.isCompleted ? '★' : '○';
@@ -395,198 +409,335 @@ class PianoPracticeApp {
     }
     
     drawLargeSprout(ctx, x, y, level) {
-        // 大きな苗木
-        const height = 30 + level * 5;
+        // 壮大な苗木
+        const height = 50 + level * 8;
         
-        // 細い幹
-        ctx.strokeStyle = '#90EE90';
-        ctx.lineWidth = 3 + level / 2;
+        // 影を描画
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.ellipse(x, y + 5, 30, 10, 0, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.restore();
+        
+        // 幹のグラデーション
+        const trunkGradient = ctx.createLinearGradient(x - 5, y, x + 5, y);
+        trunkGradient.addColorStop(0, '#7CB87C');
+        trunkGradient.addColorStop(0.5, '#90EE90');
+        trunkGradient.addColorStop(1, '#7CB87C');
+        
+        ctx.strokeStyle = trunkGradient;
+        ctx.lineWidth = 5 + level;
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.lineTo(x, y - height);
         ctx.stroke();
         
-        // 大きな葉
-        ctx.fillStyle = '#228B22';
-        const leafSize = 10 + level;
+        // 複数の大きな葉
+        const leafGradient = ctx.createRadialGradient(x, y - height, 0, x, y - height, 25);
+        leafGradient.addColorStop(0, '#3CB371');
+        leafGradient.addColorStop(1, '#228B22');
+        ctx.fillStyle = leafGradient;
+        
+        const leafSize = 20 + level * 2;
+        // 左の葉
         ctx.beginPath();
-        ctx.ellipse(x - leafSize, y - height, leafSize, leafSize * 0.7, -0.5, 0, 2 * Math.PI);
+        ctx.ellipse(x - leafSize, y - height, leafSize, leafSize * 0.8, -0.5, 0, 2 * Math.PI);
         ctx.fill();
+        // 右の葉
         ctx.beginPath();
-        ctx.ellipse(x + leafSize, y - height, leafSize, leafSize * 0.7, 0.5, 0, 2 * Math.PI);
+        ctx.ellipse(x + leafSize, y - height, leafSize, leafSize * 0.8, 0.5, 0, 2 * Math.PI);
+        ctx.fill();
+        // 中央の葉
+        ctx.beginPath();
+        ctx.ellipse(x, y - height - 10, leafSize * 0.8, leafSize * 0.6, 0, 0, 2 * Math.PI);
         ctx.fill();
     }
     
     drawLargeYoungTree(ctx, x, y, level) {
-        const trunkHeight = 60 + (level - 10) * 4;
-        const trunkWidth = 8 + (level - 10) / 5;
+        const trunkHeight = 120 + (level - 10) * 6;
+        const trunkWidth = 15 + (level - 10) / 3;
         
-        // 幹
-        ctx.fillStyle = '#8B4513';
+        // 影
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.ellipse(x, y + 10, 60, 20, 0, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.restore();
+        
+        // 幹のグラデーション
+        const trunkGradient = ctx.createLinearGradient(x - trunkWidth/2, y, x + trunkWidth/2, y);
+        trunkGradient.addColorStop(0, '#654321');
+        trunkGradient.addColorStop(0.3, '#8B4513');
+        trunkGradient.addColorStop(0.7, '#8B4513');
+        trunkGradient.addColorStop(1, '#654321');
+        
+        ctx.fillStyle = trunkGradient;
         ctx.fillRect(x - trunkWidth/2, y - trunkHeight, trunkWidth, trunkHeight);
         
-        // 枝
-        ctx.strokeStyle = '#8B4513';
-        ctx.lineWidth = 3;
+        // 枝を複数描画
+        ctx.strokeStyle = '#654321';
+        const branches = [
+            { y: 0.3, x: -50, angle: -0.4, width: 5 },
+            { y: 0.35, x: 50, angle: 0.4, width: 5 },
+            { y: 0.5, x: -45, angle: -0.5, width: 4 },
+            { y: 0.55, x: 45, angle: 0.5, width: 4 },
+            { y: 0.7, x: -40, angle: -0.3, width: 3 },
+            { y: 0.75, x: 40, angle: 0.3, width: 3 }
+        ];
         
-        // 左下の枝
-        ctx.beginPath();
-        ctx.moveTo(x, y - trunkHeight/2);
-        ctx.lineTo(x - 30, y - trunkHeight/2 - 10);
-        ctx.stroke();
+        branches.forEach(branch => {
+            if (level >= 15 || branch.y < 0.6) {
+                ctx.lineWidth = branch.width;
+                ctx.beginPath();
+                ctx.moveTo(x, y - trunkHeight * branch.y);
+                const endX = x + branch.x;
+                const endY = y - trunkHeight * branch.y - Math.abs(branch.x) * 0.3;
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            }
+        });
         
-        // 右下の枝
-        ctx.beginPath();
-        ctx.moveTo(x, y - trunkHeight/2 + 10);
-        ctx.lineTo(x + 30, y - trunkHeight/2);
-        ctx.stroke();
+        // 葉の塊を複数グラデーションで描画
+        const leafRadius = 40 + (level - 10) * 1.5;
         
-        if (level >= 20) {
-            // 左上の枝
-            ctx.beginPath();
-            ctx.moveTo(x, y - trunkHeight + 20);
-            ctx.lineTo(x - 25, y - trunkHeight + 10);
-            ctx.stroke();
+        const leafPositions = [
+            { x: 0, y: -trunkHeight - 20, radius: leafRadius },
+            { x: -45, y: -trunkHeight * 0.7, radius: leafRadius * 0.8 },
+            { x: 45, y: -trunkHeight * 0.7, radius: leafRadius * 0.8 },
+            { x: -40, y: -trunkHeight * 0.5, radius: leafRadius * 0.7 },
+            { x: 40, y: -trunkHeight * 0.5, radius: leafRadius * 0.7 }
+        ];
+        
+        leafPositions.forEach(leaf => {
+            const leafGradient = ctx.createRadialGradient(
+                x + leaf.x, y + leaf.y, 0,
+                x + leaf.x, y + leaf.y, leaf.radius
+            );
+            leafGradient.addColorStop(0, '#3CB371');
+            leafGradient.addColorStop(0.7, '#228B22');
+            leafGradient.addColorStop(1, '#1F6B1F');
             
-            // 右上の枝
+            ctx.fillStyle = leafGradient;
             ctx.beginPath();
-            ctx.moveTo(x, y - trunkHeight + 25);
-            ctx.lineTo(x + 25, y - trunkHeight + 15);
-            ctx.stroke();
-        }
-        
-        // 葉っぱの塊
-        ctx.fillStyle = '#228B22';
-        const leafRadius = 25 + (level - 10);
-        
-        // 主要な葉の塊
-        ctx.beginPath();
-        ctx.arc(x, y - trunkHeight - 10, leafRadius, 0, 2 * Math.PI);
-        ctx.fill();
-        
-        // 左の葉
-        ctx.beginPath();
-        ctx.arc(x - 25, y - trunkHeight/2 - 10, leafRadius * 0.7, 0, 2 * Math.PI);
-        ctx.fill();
-        
-        // 右の葉
-        ctx.beginPath();
-        ctx.arc(x + 25, y - trunkHeight/2, leafRadius * 0.7, 0, 2 * Math.PI);
-        ctx.fill();
+            ctx.arc(x + leaf.x, y + leaf.y, leaf.radius, 0, 2 * Math.PI);
+            ctx.fill();
+        });
     }
     
     drawLargeMatureTree(ctx, x, y, level, masteredCount, allMastered) {
-        const trunkHeight = 200;
-        const trunkWidth = 25;
+        const trunkHeight = 350;
+        const trunkWidth = 40;
         
-        // 太い幹
-        ctx.fillStyle = '#654321';
+        // 影を描画
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.ellipse(x, y + 15, 120, 40, 0, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.restore();
+        
+        // 根元を太く
+        const rootGradient = ctx.createLinearGradient(x - trunkWidth, y, x + trunkWidth, y);
+        rootGradient.addColorStop(0, '#4a3520');
+        rootGradient.addColorStop(0.3, '#654321');
+        rootGradient.addColorStop(0.7, '#654321');
+        rootGradient.addColorStop(1, '#4a3520');
+        
+        // 根を描画
+        ctx.fillStyle = rootGradient;
+        ctx.beginPath();
+        ctx.moveTo(x - trunkWidth * 1.5, y);
+        ctx.lineTo(x - trunkWidth/2, y - 30);
+        ctx.lineTo(x + trunkWidth/2, y - 30);
+        ctx.lineTo(x + trunkWidth * 1.5, y);
+        ctx.closePath();
+        ctx.fill();
+        
+        // 幹のグラデーション
+        const trunkGradient = ctx.createLinearGradient(x - trunkWidth/2, y, x + trunkWidth/2, y);
+        trunkGradient.addColorStop(0, '#4a3520');
+        trunkGradient.addColorStop(0.2, '#654321');
+        trunkGradient.addColorStop(0.8, '#654321');
+        trunkGradient.addColorStop(1, '#4a3520');
+        
+        ctx.fillStyle = trunkGradient;
         ctx.fillRect(x - trunkWidth/2, y - trunkHeight, trunkWidth, trunkHeight);
         
-        // 幹のテクスチャ
-        ctx.strokeStyle = '#4a3520';
-        ctx.lineWidth = 1;
-        for (let i = 0; i < 5; i++) {
+        // 幹のテクスチャ（縦の筋）
+        ctx.strokeStyle = '#3a2515';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 8; i++) {
+            const offset = (i - 4) * 5;
             ctx.beginPath();
-            ctx.moveTo(x - trunkWidth/2 + i * 5, y - trunkHeight);
-            ctx.lineTo(x - trunkWidth/2 + i * 5, y);
+            ctx.moveTo(x + offset, y - trunkHeight);
+            ctx.bezierCurveTo(
+                x + offset + Math.sin(i) * 3, y - trunkHeight * 0.7,
+                x + offset - Math.sin(i) * 3, y - trunkHeight * 0.3,
+                x + offset, y
+            );
             ctx.stroke();
         }
         
         // 大きな枝
-        this.drawBranches(ctx, x, y, trunkHeight);
+        this.drawComplexBranches(ctx, x, y, trunkHeight);
         
         // 豊かな葉
-        this.drawFoliage(ctx, x, y, trunkHeight, level);
+        this.drawComplexFoliage(ctx, x, y, trunkHeight, level);
         
         // 花（レベルが高い場合）
         if (level >= 40) {
-            this.drawFlowers(ctx, x, y - trunkHeight);
+            this.drawFlowers(ctx, x, y - trunkHeight + 100);
         }
         
         // 金色の実（マスターした練習項目の数だけ）
         if (masteredCount > 0) {
-            this.drawGoldenFruits(ctx, x, y - trunkHeight + 50, masteredCount);
+            this.drawGoldenFruits(ctx, x, y - trunkHeight + 100, masteredCount);
         }
         
         // 通常の実（レベルに応じて）
         if (level >= 50) {
             const normalFruitCount = Math.floor((level - 40) / 10);
-            this.drawNormalFruits(ctx, x, y - trunkHeight + 50, normalFruitCount);
+            this.drawNormalFruits(ctx, x, y - trunkHeight + 100, normalFruitCount);
         }
     }
     
-    drawBranches(ctx, x, y, trunkHeight) {
-        ctx.strokeStyle = '#654321';
-        ctx.lineWidth = 8;
-        
-        // 大きな枝を複数描画
+    drawComplexBranches(ctx, x, y, trunkHeight) {
+        // 複雑な枝構造
         const branches = [
-            { start: 0.3, angle: -0.6, length: 60 },
-            { start: 0.35, angle: 0.6, length: 60 },
-            { start: 0.5, angle: -0.7, length: 50 },
-            { start: 0.55, angle: 0.7, length: 50 },
-            { start: 0.7, angle: -0.5, length: 40 },
-            { start: 0.75, angle: 0.5, length: 40 }
+            { start: 0.2, angle: -0.8, length: 100, width: 15 },
+            { start: 0.25, angle: 0.8, length: 100, width: 15 },
+            { start: 0.35, angle: -0.6, length: 90, width: 12 },
+            { start: 0.4, angle: 0.6, length: 90, width: 12 },
+            { start: 0.5, angle: -0.7, length: 80, width: 10 },
+            { start: 0.55, angle: 0.7, length: 80, width: 10 },
+            { start: 0.65, angle: -0.5, length: 70, width: 8 },
+            { start: 0.7, angle: 0.5, length: 70, width: 8 },
+            { start: 0.8, angle: -0.4, length: 60, width: 6 },
+            { start: 0.85, angle: 0.4, length: 60, width: 6 }
         ];
         
         branches.forEach(branch => {
-            const startY = y - trunkHeight * branch.start;
-            ctx.beginPath();
-            ctx.moveTo(x, startY);
-            ctx.lineTo(
+            const startY = y - trunkHeight * (1 - branch.start);
+            
+            // 枝のグラデーション
+            const branchGradient = ctx.createLinearGradient(
+                x, startY,
                 x + Math.sin(branch.angle) * branch.length,
                 startY - Math.cos(branch.angle) * branch.length
             );
+            branchGradient.addColorStop(0, '#654321');
+            branchGradient.addColorStop(1, '#8B4513');
+            
+            ctx.strokeStyle = branchGradient;
+            ctx.lineWidth = branch.width;
+            ctx.lineCap = 'round';
+            
+            // メインの枝
+            ctx.beginPath();
+            ctx.moveTo(x, startY);
+            const cp1x = x + Math.sin(branch.angle) * branch.length * 0.3;
+            const cp1y = startY - 20;
+            const cp2x = x + Math.sin(branch.angle) * branch.length * 0.7;
+            const cp2y = startY - Math.cos(branch.angle) * branch.length * 0.7;
+            const endX = x + Math.sin(branch.angle) * branch.length;
+            const endY = startY - Math.cos(branch.angle) * branch.length;
+            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
             ctx.stroke();
             
-            // 小枝
-            ctx.lineWidth = 4;
-            ctx.beginPath();
-            ctx.moveTo(
-                x + Math.sin(branch.angle) * branch.length * 0.6,
-                startY - Math.cos(branch.angle) * branch.length * 0.6
-            );
-            ctx.lineTo(
-                x + Math.sin(branch.angle - 0.3) * branch.length * 0.9,
-                startY - Math.cos(branch.angle - 0.3) * branch.length * 0.9
-            );
-            ctx.stroke();
-            ctx.lineWidth = 8;
+            // 小枝を複数追加
+            for (let i = 0.3; i < 0.9; i += 0.2) {
+                const subX = x + Math.sin(branch.angle) * branch.length * i;
+                const subY = startY - Math.cos(branch.angle) * branch.length * i;
+                const subAngle = branch.angle + (Math.random() - 0.5) * 0.5;
+                const subLength = branch.length * 0.3;
+                
+                ctx.lineWidth = branch.width * 0.3;
+                ctx.beginPath();
+                ctx.moveTo(subX, subY);
+                ctx.lineTo(
+                    subX + Math.sin(subAngle) * subLength,
+                    subY - Math.cos(subAngle) * subLength
+                );
+                ctx.stroke();
+            }
         });
     }
     
-    drawFoliage(ctx, x, y, trunkHeight, level) {
-        ctx.fillStyle = '#228B22';
-        
-        // 葉の塊を複数描画して豊かな樹冠を作る
+    drawComplexFoliage(ctx, x, y, trunkHeight, level) {
+        // 葉の塊を大きく豪華に
         const foliageGroups = [
-            { x: 0, y: -trunkHeight - 20, radius: 50 },
-            { x: -40, y: -trunkHeight + 60, radius: 45 },
-            { x: 40, y: -trunkHeight + 60, radius: 45 },
-            { x: -60, y: -trunkHeight + 100, radius: 40 },
-            { x: 60, y: -trunkHeight + 100, radius: 40 },
-            { x: -30, y: -trunkHeight + 20, radius: 35 },
-            { x: 30, y: -trunkHeight + 20, radius: 35 },
-            { x: 0, y: -trunkHeight + 40, radius: 40 }
+            { x: 0, y: -trunkHeight - 40, radius: 80, depth: 0 },
+            { x: -70, y: -trunkHeight + 50, radius: 70, depth: 1 },
+            { x: 70, y: -trunkHeight + 50, radius: 70, depth: 1 },
+            { x: -100, y: -trunkHeight + 120, radius: 65, depth: 2 },
+            { x: 100, y: -trunkHeight + 120, radius: 65, depth: 2 },
+            { x: -50, y: -trunkHeight + 20, radius: 60, depth: 1 },
+            { x: 50, y: -trunkHeight + 20, radius: 60, depth: 1 },
+            { x: 0, y: -trunkHeight + 80, radius: 75, depth: 0 },
+            { x: -80, y: -trunkHeight + 180, radius: 55, depth: 2 },
+            { x: 80, y: -trunkHeight + 180, radius: 55, depth: 2 },
+            { x: -30, y: -trunkHeight - 10, radius: 50, depth: 1 },
+            { x: 30, y: -trunkHeight - 10, radius: 50, depth: 1 }
         ];
         
         // レベルに応じて葉の量を調整
-        const foliageCount = Math.min(foliageGroups.length, 4 + Math.floor(level / 10));
+        const foliageCount = Math.min(foliageGroups.length, 6 + Math.floor(level / 8));
         
-        for (let i = 0; i < foliageCount; i++) {
-            const group = foliageGroups[i];
+        // 深度別にソートして奥から描画
+        const sortedGroups = foliageGroups.slice(0, foliageCount).sort((a, b) => b.depth - a.depth);
+        
+        sortedGroups.forEach(group => {
+            // グラデーションで立体感を出す
+            const foliageGradient = ctx.createRadialGradient(
+                x + group.x - group.radius * 0.3, 
+                y + group.y - group.radius * 0.3, 
+                0,
+                x + group.x, 
+                y + group.y, 
+                group.radius
+            );
+            
+            // 深度によって色を調整
+            const brightness = 1 - (group.depth * 0.15);
+            const lightColor = `rgb(${Math.floor(92 * brightness)}, ${Math.floor(179 * brightness)}, ${Math.floor(113 * brightness)})`;
+            const darkColor = `rgb(${Math.floor(34 * brightness)}, ${Math.floor(139 * brightness)}, ${Math.floor(34 * brightness)})`;
+            
+            foliageGradient.addColorStop(0, lightColor);
+            foliageGradient.addColorStop(0.7, darkColor);
+            foliageGradient.addColorStop(1, `rgb(${Math.floor(31 * brightness)}, ${Math.floor(107 * brightness)}, ${Math.floor(31 * brightness)})`);
+            
+            ctx.fillStyle = foliageGradient;
+            
+            // 不規則な形でより自然に
             ctx.beginPath();
-            ctx.arc(x + group.x, y + group.y, group.radius, 0, 2 * Math.PI);
+            for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+                const variation = 1 + Math.sin(angle * 3 + group.x) * 0.1 + Math.cos(angle * 5) * 0.05;
+                const r = group.radius * variation;
+                const px = x + group.x + Math.cos(angle) * r;
+                const py = y + group.y + Math.sin(angle) * r;
+                if (angle === 0) {
+                    ctx.moveTo(px, py);
+                } else {
+                    ctx.lineTo(px, py);
+                }
+            }
+            ctx.closePath();
             ctx.fill();
             
-            // 葉のディテール
-            ctx.fillStyle = '#1F6B1F';
+            // ハイライトを追加
+            ctx.save();
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = '#90EE90';
             ctx.beginPath();
-            ctx.arc(x + group.x - 10, y + group.y + 10, group.radius * 0.3, 0, 2 * Math.PI);
+            ctx.arc(x + group.x - group.radius * 0.3, y + group.y - group.radius * 0.3, group.radius * 0.4, 0, 2 * Math.PI);
             ctx.fill();
-            ctx.fillStyle = '#228B22';
-        }
+            ctx.restore();
+        });
     }
     
     drawGoldenFruits(ctx, x, y, count) {
