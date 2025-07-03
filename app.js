@@ -1356,10 +1356,8 @@ class PianoPracticeApp {
         
         modal.classList.add('active');
         
-        // AI機能が有効な場合
-        if (this.settings.geminiApiKey || this.settings.openaiApiKey) {
-            this.generateFantasyCharacter(practice, oldLevel, newLevel);
-        }
+        // AI機能を実行（Vercel環境では常に実行）
+        this.generateFantasyCharacter(practice, oldLevel, newLevel);
     }
 
     closeLevelUpModal() {
@@ -1386,6 +1384,10 @@ class PianoPracticeApp {
     }
 
     async generateFantasyCharacter(practice, oldLevel, newLevel) {
+        console.log('=== generateFantasyCharacter開始 ===');
+        console.log('practice:', practice);
+        console.log('oldLevel:', oldLevel, 'newLevel:', newLevel);
+        
         try {
             // キャラクター情報を生成
             const characterData = await this.createCharacterConcept(practice, oldLevel, newLevel);
