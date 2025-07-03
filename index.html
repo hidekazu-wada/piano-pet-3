@@ -15,6 +15,7 @@
             </header>
             <div class="song-list" id="song-list">
             </div>
+            <button class="add-song-btn" onclick="app.showAddSongModal()">+ あたらしいきょくをついか</button>
             <button class="settings-btn" onclick="app.showSettingsScreen()">⚙️ せってい</button>
         </div>
 
@@ -25,7 +26,10 @@
             </header>
             <div class="practice-list" id="practice-list">
             </div>
-            <button class="add-practice-btn" onclick="app.showAddCheckPointModal()">+ ちゅういてんをついか</button>
+            <div class="practice-actions">
+                <button class="add-practice-btn" onclick="app.showAddPracticeModal()">+ れんしゅうこうもくをついか</button>
+                <button class="add-practice-btn" onclick="app.showAddCheckPointModal()">+ ちゅういてんをついか</button>
+            </div>
         </div>
 
         <div id="evaluation-screen" class="screen">
@@ -168,6 +172,36 @@
                     <div class="modal-buttons">
                         <button onclick="app.closeAddCheckPointModal()">キャンセル</button>
                         <button class="primary" onclick="app.addCheckPoint()">ついか</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="add-song-modal" class="modal">
+            <div class="modal-content">
+                <h3>あたらしいきょくをついか</h3>
+                <div class="modal-form">
+                    <label>きょくのなまえ</label>
+                    <input type="text" id="new-song-title" placeholder="れい: きらきらぼし">
+                    <div class="modal-buttons">
+                        <button onclick="app.closeAddSongModal()">キャンセル</button>
+                        <button class="primary" onclick="app.addSong()">ついか</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="add-practice-modal" class="modal">
+            <div class="modal-content">
+                <h3>れんしゅうこうもくをついか</h3>
+                <div class="modal-form">
+                    <label>れんしゅうのなまえ</label>
+                    <input type="text" id="new-practice-title" placeholder="れい: 1だんめ りょうてでゆっくり">
+                    <label>せつめい</label>
+                    <input type="text" id="new-practice-description" placeholder="れい: テンポ60でただしく">
+                    <div class="modal-buttons">
+                        <button onclick="app.closeAddPracticeModal()">キャンセル</button>
+                        <button class="primary" onclick="app.addPractice()">ついか</button>
                     </div>
                 </div>
             </div>

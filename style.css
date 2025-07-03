@@ -117,18 +117,57 @@ h2 {
 }
 
 .practice-card.completed {
-    background: linear-gradient(135deg, #b0b0b0 0%, #808080 100%);
-    opacity: 0.7;
+    background: linear-gradient(135deg, #fff9e6 0%, #ffeb99 100%);
+    border: 3px solid #ffd700;
+    box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+    position: relative;
+    overflow: visible;
 }
 
-.practice-card.completed h3,
+.practice-card.completed::before {
+    content: '✨';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    font-size: 2rem;
+    animation: sparkle 2s infinite;
+}
+
+.practice-card.completed::after {
+    content: '🎉';
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    font-size: 2rem;
+    animation: bounce 2s infinite;
+}
+
+@keyframes sparkle {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.2) rotate(180deg); }
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.practice-card.completed h3 {
+    color: #d4a017;
+    font-weight: bold;
+}
+
 .practice-card.completed p {
-    color: rgba(255, 255, 255, 0.9);
+    color: #b8860b;
 }
 
 .practice-card .level-badge.master {
-    background-color: #ffd700;
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
     color: #333;
+    font-weight: bold;
+    font-size: 1rem;
+    padding: 8px 20px;
+    box-shadow: 0 3px 10px rgba(255, 215, 0, 0.4);
 }
 
 .practice-divider {
@@ -139,11 +178,20 @@ h2 {
 
 .practice-divider span {
     background-color: white;
-    padding: 0 15px;
-    color: #999;
-    font-size: 0.9rem;
+    padding: 0 20px;
+    color: #ffd700;
+    font-size: 1.1rem;
+    font-weight: bold;
     position: relative;
     z-index: 1;
+}
+
+.practice-divider span::before {
+    content: '🏆 ';
+}
+
+.practice-divider span::after {
+    content: ' 🏆';
 }
 
 .practice-divider::before {
@@ -152,26 +200,29 @@ h2 {
     top: 50%;
     left: 0;
     right: 0;
-    height: 1px;
-    background-color: #ddd;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #ffd700, transparent);
 }
 
 .reopen-btn {
     position: absolute;
     bottom: 15px;
     right: 15px;
-    background-color: rgba(255, 255, 255, 0.9);
-    color: #333;
-    border: none;
+    background-color: white;
+    color: #d4a017;
+    border: 2px solid #ffd700;
     padding: 8px 15px;
     border-radius: 20px;
     font-size: 0.9rem;
+    font-weight: bold;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
 }
 
 .reopen-btn:hover {
-    background-color: white;
+    background-color: #ffd700;
+    color: #333;
+    transform: scale(1.05);
 }
 
 
@@ -521,7 +572,7 @@ h2 {
     cursor: pointer;
 }
 
-.add-practice-btn {
+.add-song-btn {
     display: block;
     margin: 20px auto;
     background-color: #f0f4ff;
@@ -530,6 +581,29 @@ h2 {
     padding: 15px 30px;
     border-radius: 10px;
     font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.add-song-btn:hover {
+    background-color: #4a69ff;
+    color: white;
+}
+
+.practice-actions {
+    display: flex;
+    gap: 10px;
+    margin: 20px;
+}
+
+.add-practice-btn {
+    flex: 1;
+    background-color: #f0f4ff;
+    color: #4a69ff;
+    border: 2px dashed #4a69ff;
+    padding: 15px 20px;
+    border-radius: 10px;
+    font-size: 1rem;
     cursor: pointer;
     transition: all 0.2s;
 }

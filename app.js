@@ -338,25 +338,25 @@ class PianoPracticeApp {
         const practiceSeconds = this.timerSeconds;
         const practiceMinutes = Math.floor(practiceSeconds / 60);
         
-        // ポイント計算
-        const timePoints = practiceMinutes; // 1分ごとに1ポイント
+        // ポイント計算（全体的に抑えめに調整）
+        const timePoints = Math.floor(practiceMinutes / 2); // 2分ごとに1ポイント
         
-        // 出来栄えポイント
+        // 出来栄えポイント（間違えないでできたを高めに）
         const performanceMap = {
             0: 0,   // やるまえ
-            3: 10,  // がんばりちゅう
-            6: 20,  // まちがえるけどできてきた
-            9: 30,  // まちがえないでできた
-            10: 40  // マスター
+            3: 2,   // がんばりちゅう
+            6: 4,   // まちがえるけどできてきた
+            9: 8,   // まちがえないでできた（2番目に高い）
+            10: 10  // マスター
         };
         const performancePoints = performanceMap[this.selectedLevel] || 0;
         
-        // 取り組み姿勢ポイント
+        // 取り組み姿勢ポイント（自分で考えて改善を最高に）
         const attitudeMap = {
             0: 0,   // 未選択
-            1: 5,   // あまりしゅうちゅうできなかった
-            2: 10,  // おやにいわれてがんばれた
-            3: 20   // じぶんでかんがえてかいぜんできた
+            1: 1,   // あまりしゅうちゅうできなかった
+            2: 3,   // おやにいわれてがんばれた
+            3: 10   // じぶんでかんがえてかいぜんできた（最高ポイント）
         };
         const attitudePoints = attitudeMap[this.selectedAttitude] || 0;
         
@@ -365,8 +365,8 @@ class PianoPracticeApp {
             practice.levelBreakdown = { timePoints: 0, performancePoints: 0, attitudePoints: 0 };
         }
         
-        // 累積時間ポイントを計算
-        const totalTimePoints = Math.floor((practice.practiceTime + practiceSeconds) / 60);
+        // 累積時間ポイントを計算（2分ごとに1ポイント）
+        const totalTimePoints = Math.floor((practice.practiceTime + practiceSeconds) / 120);
         
         // ポイントを累積
         practice.levelBreakdown.timePoints = totalTimePoints;
@@ -499,6 +499,11 @@ class PianoPracticeApp {
             select.appendChild(option);
         });
         
+        // デフォルトで現在の練習を選択
+        if (this.currentPracticeId) {
+            select.value = this.currentPracticeId;
+        }
+        
         document.getElementById('checkpoint-text').value = '';
         modal.classList.add('active');
     }
@@ -586,6 +591,72 @@ class PianoPracticeApp {
             this.saveData();
             this.renderPracticeList();
         }
+    }
+
+    showAddSongModal() {
+        document.getElementById('new-song-title').value = '';
+        document.getElementById('add-song-modal').classList.add('active');
+    }
+
+    closeAddSongModal() {
+        document.getElementById('add-song-modal').classList.remove('active');
+    }
+
+    addSong() {
+        const title = document.getElementById('new-song-title').value.trim();
+        
+        if (!title) return;
+        
+        const newSongId = `song_${Date.now()}`;
+        const newSong = {
+            id: newSongId,
+            title: title,
+            practices: []
+        };
+        
+        this.data.songs[newSongId] = newSong;
+        this.saveData();
+        this.closeAddSongModal();
+        this.renderSongList();
+    }
+
+    showAddPracticeModal() {
+        document.getElementById('new-practice-title').value = '';
+        document.getElementById('new-practice-description').value = '';
+        document.getElementById('add-practice-modal').classList.add('active');
+    }
+
+    closeAddPracticeModal() {
+        document.getElementById('add-practice-modal').classList.remove('active');
+    }
+
+    addPractice() {
+        const title = document.getElementById('new-practice-title').value.trim();
+        const description = document.getElementById('new-practice-description').value.trim();
+        
+        if (!title) return;
+        
+        const song = this.data.songs[this.currentSongId];
+        const newPractice = {
+            id: `practice_${Date.now()}`,
+            title: title,
+            description: description || '',
+            level: 0,
+            isCompleted: false,
+            levelBreakdown: {
+                timePoints: 0,
+                performancePoints: 0,
+                attitudePoints: 0
+            },
+            practiceTime: 0,
+            lastPracticed: null,
+            checkPoints: []
+        };
+        
+        song.practices.push(newPractice);
+        this.saveData();
+        this.closeAddPracticeModal();
+        this.renderPracticeList();
     }
 }
 
