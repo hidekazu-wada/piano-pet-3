@@ -7,6 +7,8 @@ class APIClient {
 
     async callAPI(endpoint, data) {
         try {
+            console.log(`API呼び出し: ${endpoint}`, data);
+            
             const response = await fetch(`${this.baseURL}/${endpoint}`, {
                 method: 'POST',
                 headers: {
@@ -15,11 +17,17 @@ class APIClient {
                 body: JSON.stringify(data)
             });
 
+            console.log(`API応答 ${endpoint}: status=${response.status}`);
+
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                console.error(`APIエラー詳細 ${endpoint}:`, errorText);
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
             }
 
-            return await response.json();
+            const result = await response.json();
+            console.log(`API成功 ${endpoint}:`, result);
+            return result;
         } catch (error) {
             console.error(`API call failed for ${endpoint}:`, error);
             throw error;

@@ -1394,16 +1394,33 @@ class PianoPracticeApp {
             this.displayCharacterInfo(characterData);
             
             // Gemini APIでメッセージ生成
-            const aiMessage = await this.generateAIMessage(characterData, practice, newLevel);
-            if (aiMessage) {
-                document.getElementById('ai-message').textContent = aiMessage;
-                
-                // 11Labsで音声生成
-                await this.generateVoice(aiMessage);
+            try {
+                const aiMessage = await this.generateAIMessage(characterData, practice, newLevel);
+                if (aiMessage) {
+                    document.getElementById('ai-message').textContent = aiMessage;
+                    
+                    // 11Labsで音声生成
+                    try {
+                        await this.generateVoice(aiMessage);
+                    } catch (error) {
+                        console.error('音声生成エラー:', error);
+                    }
+                } else {
+                    console.warn('AIメッセージが生成されませんでした');
+                    document.getElementById('ai-message').textContent = 'メッセージの生成に失敗しました';
+                }
+            } catch (error) {
+                console.error('メッセージ生成エラー:', error);
+                document.getElementById('ai-message').textContent = 'メッセージの生成に失敗しました';
             }
             
             // OpenAI DALL-Eでイラスト生成
-            await this.generateCharacterImage(characterData);
+            try {
+                await this.generateCharacterImage(characterData);
+            } catch (error) {
+                console.error('画像生成エラー:', error);
+                document.getElementById('character-image').innerHTML = '<div class="placeholder-image large">🎨</div>';
+            }
             
             // キャラクターをコレクションに保存
             this.saveToCollection(characterData);
