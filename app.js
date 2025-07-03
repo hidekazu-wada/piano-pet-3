@@ -1654,12 +1654,8 @@ class PianoPracticeApp {
                     
                     // 英語のプロンプトを生成（日本語を含まないように）
                     const speciesEnglish = this.translateSpeciesToEnglish(characterData.species);
-                    const prompt = `A cute fantasy creature ${speciesEnglish}, 
-                        playing music with a small girl at a piano, 
-                        magical atmosphere,
-                        soft watercolor anime style, pastel colors with magical glow, 
-                        Studio Ghibli inspired, children's book illustration,
-                        warm and encouraging expression`;
+                    // よりシンプルなプロンプト（Ghibliなどの固有名詞を避ける）
+                    const prompt = `A cute cartoon ${speciesEnglish} playing piano, colorful fantasy art style, soft pastel colors`;
                     
                     console.log('画像生成プロンプト:', prompt);
                     const imageUrl = await window.apiClient.generateImage(prompt);
