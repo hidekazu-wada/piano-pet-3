@@ -1650,13 +1650,18 @@ class PianoPracticeApp {
             // OpenAI APIを試す（オプション）
             if (window.apiClient && true) { // OpenAI APIを有効化
                 try {
-                    const prompt = `A cute fantasy creature that is ${characterData.species}, 
-                        playing music with a small Japanese girl at a piano, 
-                        ${characterData.practiceContext.tempo} tempo atmosphere,
+                    console.log('キャラクターデータ:', characterData);
+                    
+                    // 英語のプロンプトを生成（日本語を含まないように）
+                    const speciesEnglish = this.translateSpeciesToEnglish(characterData.species);
+                    const prompt = `A cute fantasy creature ${speciesEnglish}, 
+                        playing music with a small girl at a piano, 
+                        magical atmosphere,
                         soft watercolor anime style, pastel colors with magical glow, 
                         Studio Ghibli inspired, children's book illustration,
                         warm and encouraging expression`;
                     
+                    console.log('画像生成プロンプト:', prompt);
                     const imageUrl = await window.apiClient.generateImage(prompt);
                     characterImage.innerHTML = `<img src="${imageUrl}" alt="${characterData.name}" />`;
                     characterData.imageUrl = imageUrl;
@@ -1668,6 +1673,38 @@ class PianoPracticeApp {
             console.error('Character display error:', error);
             document.getElementById('character-image').innerHTML = '<div class="placeholder-image large">🎨</div>';
         }
+    }
+    
+    translateSpeciesToEnglish(species) {
+        // 日本語の種族名を英語に翻訳
+        const translations = {
+            'カメ': 'turtle',
+            'チョウ': 'butterfly',
+            'カエル': 'frog',
+            'トリ': 'bird',
+            'ウサギ': 'rabbit',
+            'ネコ': 'cat',
+            'イヌ': 'dog',
+            'クマ': 'bear',
+            'キツネ': 'fox',
+            'リス': 'squirrel',
+            'ペンギン': 'penguin',
+            'フクロウ': 'owl',
+            'ドラゴン': 'dragon',
+            'ユニコーン': 'unicorn',
+            'フェアリー': 'fairy',
+            'ロボット': 'robot'
+        };
+        
+        // 種族名から英語を抽出
+        for (const [jp, en] of Object.entries(translations)) {
+            if (species.includes(jp)) {
+                return en;
+            }
+        }
+        
+        // デフォルト
+        return 'magical creature';
     }
     
     saveToCollection(characterData) {
