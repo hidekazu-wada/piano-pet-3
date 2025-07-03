@@ -1598,26 +1598,75 @@ class PianoPracticeApp {
     
     async generateCharacterImage(characterData) {
         try {
-            if (!window.apiClient) {
-                console.error('API client not initialized');
-                return;
+            // 絵文字ベースのキャラクター表示
+            const characterImage = document.getElementById('character-image');
+            
+            // キャラクターの種類に基づいて絵文字を選択
+            const emojiMap = {
+                'カメ': '🐢',
+                'チョウ': '🦋',
+                'カエル': '🐸',
+                'トリ': '🐦',
+                'ウサギ': '🐰',
+                'ネコ': '🐱',
+                'イヌ': '🐕',
+                'クマ': '🐻',
+                'キツネ': '🦊',
+                'リス': '🐿️',
+                'ペンギン': '🐧',
+                'フクロウ': '🦉',
+                'ドラゴン': '🐉',
+                'ユニコーン': '🦄',
+                'フェアリー': '🧚',
+                'ロボット': '🤖'
+            };
+            
+            // 種族名から絵文字を取得
+            let mainEmoji = '🎵'; // デフォルト
+            for (const [key, emoji] of Object.entries(emojiMap)) {
+                if (characterData.species.includes(key)) {
+                    mainEmoji = emoji;
+                    break;
+                }
             }
             
-            const prompt = `A cute fantasy creature that is ${characterData.species}, 
-                playing music with a small Japanese girl at a piano, 
-                ${characterData.practiceContext.tempo} tempo atmosphere,
-                soft watercolor anime style, pastel colors with magical glow, 
-                Studio Ghibli inspired, children's book illustration,
-                warm and encouraging expression`;
+            // 楽器や音楽要素の絵文字
+            const musicEmojis = ['🎹', '🎵', '🎶', '🎼', '✨', '🌟', '💫'];
+            const accentEmoji = musicEmojis[Math.floor(Math.random() * musicEmojis.length)];
             
-            const imageUrl = await window.apiClient.generateImage(prompt);
-            const characterImage = document.getElementById('character-image');
-            characterImage.innerHTML = `<img src="${imageUrl}" alt="${characterData.name}" />`;
+            // 大きな絵文字でキャラクターを表示
+            characterImage.innerHTML = `
+                <div style="font-size: 120px; text-align: center; line-height: 1.2;">
+                    ${mainEmoji}
+                </div>
+                <div style="font-size: 60px; text-align: center; margin-top: -20px;">
+                    ${accentEmoji}
+                </div>
+            `;
             
-            // コレクション用に画像を保存
-            characterData.imageUrl = imageUrl;
+            // コレクション用に絵文字を保存
+            characterData.emojiDisplay = `${mainEmoji}${accentEmoji}`;
+            
+            // OpenAI APIを試す（オプション）
+            if (window.apiClient && false) { // 一時的に無効化
+                try {
+                    const prompt = `A cute fantasy creature that is ${characterData.species}, 
+                        playing music with a small Japanese girl at a piano, 
+                        ${characterData.practiceContext.tempo} tempo atmosphere,
+                        soft watercolor anime style, pastel colors with magical glow, 
+                        Studio Ghibli inspired, children's book illustration,
+                        warm and encouraging expression`;
+                    
+                    const imageUrl = await window.apiClient.generateImage(prompt);
+                    characterImage.innerHTML = `<img src="${imageUrl}" alt="${characterData.name}" />`;
+                    characterData.imageUrl = imageUrl;
+                } catch (error) {
+                    console.log('画像生成をスキップ、絵文字を使用');
+                }
+            }
         } catch (error) {
-            console.error('OpenAI API error:', error);
+            console.error('Character display error:', error);
+            document.getElementById('character-image').innerHTML = '<div class="placeholder-image large">🎨</div>';
         }
     }
     
