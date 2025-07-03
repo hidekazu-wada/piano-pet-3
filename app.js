@@ -9,6 +9,11 @@ class PianoPracticeApp {
         this.selectedAttitude = 0;
         this.currentView = 'list';
         this.skillTree = null;
+        this.harvestAnimating = false;
+        this.harvestAnimationProgress = 0;
+        this.harvestPracticeId = null;
+        this.animationQueue = [];
+        this.previousTreeState = null;
         this.initializeData();
         this.loadSettings();
         this.render();
@@ -269,6 +274,10 @@ class PianoPracticeApp {
         document.getElementById('skill-tree-container').style.display = 'block';
         document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelector('[onclick="app.showSkillTreeView()"]').classList.add('active');
+        
+        // アニメーションキューを処理
+        this.processAnimationQueue();
+        
         this.renderSkillTree();
     }
 
@@ -280,127 +289,622 @@ class PianoPracticeApp {
         // Canvasのサイズを設定
         const container = canvas.parentElement;
         canvas.width = container.clientWidth - 40;
-        canvas.height = 400;
+        canvas.height = 500;
         
-        // 背景をクリア
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // 背景をクリア（空のグラデーション）
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, '#e6f3ff');
+        gradient.addColorStop(1, '#f0f8ff');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         if (!song || song.practices.length === 0) return;
         
-        // ノードの配置を計算
-        const nodes = this.calculateNodePositions(song.practices, canvas.width, canvas.height);
+        // 曲全体のレベルを計算（全練習項目のレベル合計）
+        const totalLevel = song.practices.reduce((sum, practice) => sum + practice.level, 0);
+        const masteredPractices = song.practices.filter(p => p.isCompleted);
         
-        // 接続線を描画
-        this.drawConnections(ctx, nodes);
+        // 1曲1本の大きな木を中央に描画
+        const centerX = canvas.width / 2;
+        const treeData = {
+            x: centerX,
+            y: canvas.height - 30,
+            level: totalLevel,
+            masteredCount: masteredPractices.length,
+            totalPractices: song.practices.length,
+            song: song
+        };
         
-        // ノードを描画
-        nodes.forEach(node => {
-            this.drawNode(ctx, node);
-        });
+        this.drawSongTree(ctx, treeData);
         
-        // クリックイベントの設定
+        // 練習項目のリストを木の下に表示
+        this.drawPracticeLabels(ctx, song, canvas.height - 30);
+        
+        // クリックイベントの設定（木全体がクリック可能）
         canvas.onclick = (e) => {
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             
-            nodes.forEach(node => {
-                const distance = Math.sqrt(Math.pow(x - node.x, 2) + Math.pow(y - node.y, 2));
-                if (distance < node.radius) {
-                    this.showEvaluationScreen(node.practice.id);
-                }
-            });
+            // 木のエリア内でのクリックを判定
+            if (x > centerX - 100 && x < centerX + 100 && y < canvas.height - 20) {
+                // 練習項目リストをポップアップで表示
+                this.showPracticeSelector();
+            }
         };
     }
 
-    calculateNodePositions(practices, width, height) {
-        const nodes = [];
-        const cols = Math.ceil(Math.sqrt(practices.length));
-        const rows = Math.ceil(practices.length / cols);
-        const cellWidth = width / (cols + 1);
-        const cellHeight = height / (rows + 1);
+    drawSongTree(ctx, treeData) {
+        const { x, y, level, masteredCount, totalPractices, song } = treeData;
         
-        practices.forEach((practice, index) => {
-            const col = index % cols;
-            const row = Math.floor(index / cols);
-            nodes.push({
-                practice: practice,
-                x: cellWidth * (col + 1),
-                y: cellHeight * (row + 1),
-                radius: 40,
-                level: practice.level,
-                isCompleted: practice.isCompleted
-            });
+        // アニメーション中の場合はアニメーションレベルを使用
+        const displayLevel = this.animationLevel !== null && this.animationLevel !== undefined ? this.animationLevel : level;
+        
+        // 地面を描画
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(x - 100, y, 200, 20);
+        
+        // 木を描画
+        if (displayLevel === 0) {
+            // 種
+            this.drawSeed(ctx, x, y);
+        } else if (displayLevel <= 10) {
+            // 苗木
+            this.drawLargeSprout(ctx, x, y, displayLevel);
+        } else if (displayLevel <= 30) {
+            // 若木
+            this.drawLargeYoungTree(ctx, x, y, displayLevel);
+        } else {
+            // 成木
+            const allMastered = masteredCount === totalPractices;
+            this.drawLargeMatureTree(ctx, x, y, displayLevel, masteredCount, allMastered);
+        }
+        
+        // 曲名と全体レベル表示
+        ctx.fillStyle = '#333';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(song.title, x, y + 40);
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText(`トータル Lv.${Math.floor(level)}`, x, y + 60);
+        
+        // マスター進捗表示
+        if (masteredCount > 0) {
+            ctx.fillStyle = '#ffd700';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText(`★ ${masteredCount}/${totalPractices} マスター`, x, y + 80);
+        }
+    }
+    
+    drawPracticeLabels(ctx, song, baseY) {
+        // 練習項目のリストを小さく表示
+        ctx.fillStyle = '#666';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'left';
+        
+        const startX = 20;
+        let currentY = baseY + 120;
+        
+        song.practices.forEach((practice, index) => {
+            const status = practice.isCompleted ? '★' : '○';
+            const color = practice.isCompleted ? '#ffd700' : '#666';
+            ctx.fillStyle = color;
+            ctx.fillText(`${status} ${practice.title} (Lv.${Math.floor(practice.level)})`, startX, currentY);
+            currentY += 18;
         });
-        
-        return nodes;
     }
-
-    drawConnections(ctx, nodes) {
-        ctx.strokeStyle = '#e0e0e0';
-        ctx.lineWidth = 3;
+    
+    drawLargeSprout(ctx, x, y, level) {
+        // 大きな苗木
+        const height = 30 + level * 5;
         
-        for (let i = 0; i < nodes.length - 1; i++) {
-            const current = nodes[i];
-            const next = nodes[i + 1];
-            
-            ctx.beginPath();
-            ctx.moveTo(current.x, current.y);
-            ctx.lineTo(next.x, next.y);
-            ctx.stroke();
-        }
-    }
-
-    drawNode(ctx, node) {
-        const { x, y, radius, practice, level, isCompleted } = node;
-        
-        // ノードの色を決定
-        let fillColor = '#e0e0e0'; // グレー（レベル0）
-        if (isCompleted) {
-            fillColor = '#ffd700'; // ゴールド（マスター）
-        } else if (level > 0) {
-            const intensity = Math.min(level / 50, 1);
-            const r = Math.floor(74 + (255 - 74) * intensity);
-            const g = Math.floor(105 + (215 - 105) * intensity);
-            const b = Math.floor(255 - 255 * intensity);
-            fillColor = `rgb(${r}, ${g}, ${b})`;
-        }
-        
-        // 外側の円（進捗リング）
+        // 細い幹
+        ctx.strokeStyle = '#90EE90';
+        ctx.lineWidth = 3 + level / 2;
         ctx.beginPath();
-        ctx.arc(x, y, radius + 5, 0, 2 * Math.PI);
-        ctx.fillStyle = isCompleted ? '#ffed4e' : '#f0f4ff';
-        ctx.fill();
-        
-        // メインの円
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, 2 * Math.PI);
-        ctx.fillStyle = fillColor;
-        ctx.fill();
-        
-        // 境界線
-        ctx.strokeStyle = isCompleted ? '#ffd700' : '#4a69ff';
-        ctx.lineWidth = 3;
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y - height);
         ctx.stroke();
         
-        // テキスト（レベル）
-        ctx.fillStyle = level > 30 ? 'white' : '#333';
-        ctx.font = 'bold 20px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(`Lv.${Math.floor(level)}`, x, y);
+        // 大きな葉
+        ctx.fillStyle = '#228B22';
+        const leafSize = 10 + level;
+        ctx.beginPath();
+        ctx.ellipse(x - leafSize, y - height, leafSize, leafSize * 0.7, -0.5, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(x + leafSize, y - height, leafSize, leafSize * 0.7, 0.5, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+    
+    drawLargeYoungTree(ctx, x, y, level) {
+        const trunkHeight = 60 + (level - 10) * 4;
+        const trunkWidth = 8 + (level - 10) / 5;
         
-        // タイトル
-        ctx.fillStyle = '#333';
-        ctx.font = '12px sans-serif';
-        ctx.textAlign = 'center';
-        const title = practice.title.length > 10 ? practice.title.substring(0, 10) + '...' : practice.title;
-        ctx.fillText(title, x, y + radius + 20);
+        // 幹
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(x - trunkWidth/2, y - trunkHeight, trunkWidth, trunkHeight);
         
-        // 完了アイコン
-        if (isCompleted) {
-            ctx.font = '24px sans-serif';
-            ctx.fillText('👑', x, y - radius - 15);
+        // 枝
+        ctx.strokeStyle = '#8B4513';
+        ctx.lineWidth = 3;
+        
+        // 左下の枝
+        ctx.beginPath();
+        ctx.moveTo(x, y - trunkHeight/2);
+        ctx.lineTo(x - 30, y - trunkHeight/2 - 10);
+        ctx.stroke();
+        
+        // 右下の枝
+        ctx.beginPath();
+        ctx.moveTo(x, y - trunkHeight/2 + 10);
+        ctx.lineTo(x + 30, y - trunkHeight/2);
+        ctx.stroke();
+        
+        if (level >= 20) {
+            // 左上の枝
+            ctx.beginPath();
+            ctx.moveTo(x, y - trunkHeight + 20);
+            ctx.lineTo(x - 25, y - trunkHeight + 10);
+            ctx.stroke();
+            
+            // 右上の枝
+            ctx.beginPath();
+            ctx.moveTo(x, y - trunkHeight + 25);
+            ctx.lineTo(x + 25, y - trunkHeight + 15);
+            ctx.stroke();
+        }
+        
+        // 葉っぱの塊
+        ctx.fillStyle = '#228B22';
+        const leafRadius = 25 + (level - 10);
+        
+        // 主要な葉の塊
+        ctx.beginPath();
+        ctx.arc(x, y - trunkHeight - 10, leafRadius, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // 左の葉
+        ctx.beginPath();
+        ctx.arc(x - 25, y - trunkHeight/2 - 10, leafRadius * 0.7, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // 右の葉
+        ctx.beginPath();
+        ctx.arc(x + 25, y - trunkHeight/2, leafRadius * 0.7, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+    
+    drawLargeMatureTree(ctx, x, y, level, masteredCount, allMastered) {
+        const trunkHeight = 200;
+        const trunkWidth = 25;
+        
+        // 太い幹
+        ctx.fillStyle = '#654321';
+        ctx.fillRect(x - trunkWidth/2, y - trunkHeight, trunkWidth, trunkHeight);
+        
+        // 幹のテクスチャ
+        ctx.strokeStyle = '#4a3520';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 5; i++) {
+            ctx.beginPath();
+            ctx.moveTo(x - trunkWidth/2 + i * 5, y - trunkHeight);
+            ctx.lineTo(x - trunkWidth/2 + i * 5, y);
+            ctx.stroke();
+        }
+        
+        // 大きな枝
+        this.drawBranches(ctx, x, y, trunkHeight);
+        
+        // 豊かな葉
+        this.drawFoliage(ctx, x, y, trunkHeight, level);
+        
+        // 花（レベルが高い場合）
+        if (level >= 40) {
+            this.drawFlowers(ctx, x, y - trunkHeight);
+        }
+        
+        // 金色の実（マスターした練習項目の数だけ）
+        if (masteredCount > 0) {
+            this.drawGoldenFruits(ctx, x, y - trunkHeight + 50, masteredCount);
+        }
+        
+        // 通常の実（レベルに応じて）
+        if (level >= 50) {
+            const normalFruitCount = Math.floor((level - 40) / 10);
+            this.drawNormalFruits(ctx, x, y - trunkHeight + 50, normalFruitCount);
+        }
+    }
+    
+    drawBranches(ctx, x, y, trunkHeight) {
+        ctx.strokeStyle = '#654321';
+        ctx.lineWidth = 8;
+        
+        // 大きな枝を複数描画
+        const branches = [
+            { start: 0.3, angle: -0.6, length: 60 },
+            { start: 0.35, angle: 0.6, length: 60 },
+            { start: 0.5, angle: -0.7, length: 50 },
+            { start: 0.55, angle: 0.7, length: 50 },
+            { start: 0.7, angle: -0.5, length: 40 },
+            { start: 0.75, angle: 0.5, length: 40 }
+        ];
+        
+        branches.forEach(branch => {
+            const startY = y - trunkHeight * branch.start;
+            ctx.beginPath();
+            ctx.moveTo(x, startY);
+            ctx.lineTo(
+                x + Math.sin(branch.angle) * branch.length,
+                startY - Math.cos(branch.angle) * branch.length
+            );
+            ctx.stroke();
+            
+            // 小枝
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(
+                x + Math.sin(branch.angle) * branch.length * 0.6,
+                startY - Math.cos(branch.angle) * branch.length * 0.6
+            );
+            ctx.lineTo(
+                x + Math.sin(branch.angle - 0.3) * branch.length * 0.9,
+                startY - Math.cos(branch.angle - 0.3) * branch.length * 0.9
+            );
+            ctx.stroke();
+            ctx.lineWidth = 8;
+        });
+    }
+    
+    drawFoliage(ctx, x, y, trunkHeight, level) {
+        ctx.fillStyle = '#228B22';
+        
+        // 葉の塊を複数描画して豊かな樹冠を作る
+        const foliageGroups = [
+            { x: 0, y: -trunkHeight - 20, radius: 50 },
+            { x: -40, y: -trunkHeight + 60, radius: 45 },
+            { x: 40, y: -trunkHeight + 60, radius: 45 },
+            { x: -60, y: -trunkHeight + 100, radius: 40 },
+            { x: 60, y: -trunkHeight + 100, radius: 40 },
+            { x: -30, y: -trunkHeight + 20, radius: 35 },
+            { x: 30, y: -trunkHeight + 20, radius: 35 },
+            { x: 0, y: -trunkHeight + 40, radius: 40 }
+        ];
+        
+        // レベルに応じて葉の量を調整
+        const foliageCount = Math.min(foliageGroups.length, 4 + Math.floor(level / 10));
+        
+        for (let i = 0; i < foliageCount; i++) {
+            const group = foliageGroups[i];
+            ctx.beginPath();
+            ctx.arc(x + group.x, y + group.y, group.radius, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // 葉のディテール
+            ctx.fillStyle = '#1F6B1F';
+            ctx.beginPath();
+            ctx.arc(x + group.x - 10, y + group.y + 10, group.radius * 0.3, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.fillStyle = '#228B22';
+        }
+    }
+    
+    drawGoldenFruits(ctx, x, y, count) {
+        const positions = [
+            {x: -40, y: 20}, {x: 40, y: 25}, {x: 0, y: -10},
+            {x: -25, y: 40}, {x: 25, y: 15}, {x: -45, y: 5},
+            {x: 45, y: 35}, {x: -15, y: 25}, {x: 15, y: 45}
+        ];
+        
+        // 新しい実の追加アニメーション
+        if (this.newFruitAnimation && count > 0) {
+            // 既存の実を描画
+            for (let i = 0; i < count - 1; i++) {
+                const pos = positions[i];
+                this.drawSingleGoldenFruit(ctx, x + pos.x, y + pos.y);
+            }
+            
+            // 新しい実をアニメーション付きで描画
+            if (count <= positions.length) {
+                const newPos = positions[count - 1];
+                const progress = this.newFruitAnimation.progress;
+                const scale = progress;
+                const opacity = progress;
+                
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                ctx.translate(x + newPos.x, y + newPos.y);
+                ctx.scale(scale, scale);
+                
+                // 金色の実
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(0, 0, 6, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // キラキラエフェクト
+                if (progress > 0.5) {
+                    const sparkleProgress = (progress - 0.5) * 2;
+                    ctx.fillStyle = `rgba(255, 255, 255, ${1 - sparkleProgress})`;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 10 * sparkleProgress, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+            }
+            return;
+        }
+        
+        // 収穫アニメーション中の特別な描画
+        if (this.harvestAnimating) {
+            for (let i = 0; i < Math.min(count, positions.length); i++) {
+                const pos = positions[i];
+                
+                if (this.harvestType === 'single' && i === count - 1) {
+                    // 最後の実（最新のマスター）をアニメーション
+                    const animProgress = this.harvestAnimationProgress;
+                    const fallY = pos.y + (animProgress * 80);
+                    const size = 6 + animProgress * 3;
+                    const opacity = Math.max(0, 1 - animProgress * 0.5);
+                    
+                    ctx.save();
+                    ctx.globalAlpha = opacity;
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.arc(x + pos.x, y + fallY, size, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.restore();
+                } else if (this.harvestType === 'grand') {
+                    // 大収穫祭 - 全ての実が落ちる
+                    const animProgress = this.harvestAnimationProgress;
+                    const fallY = pos.y + (animProgress * 100) + (i * 10);
+                    const rotation = animProgress * Math.PI * 2;
+                    const size = 6 + animProgress * 2;
+                    
+                    ctx.save();
+                    ctx.translate(x + pos.x, y + fallY);
+                    ctx.rotate(rotation);
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, size, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.restore();
+                } else {
+                    // 通常の金色の実
+                    this.drawSingleGoldenFruit(ctx, x + pos.x, y + pos.y);
+                }
+            }
+        } else {
+            // 通常時
+            for (let i = 0; i < Math.min(count, positions.length); i++) {
+                const pos = positions[i];
+                this.drawSingleGoldenFruit(ctx, x + pos.x, y + pos.y);
+            }
+        }
+    }
+    
+    drawSingleGoldenFruit(ctx, x, y) {
+        // 金色の実
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // 光沢
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.beginPath();
+        ctx.arc(x - 2, y - 2, 2, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // 星のエフェクト
+        ctx.fillStyle = '#FFF';
+        ctx.font = '8px sans-serif';
+        ctx.fillText('★', x - 3, y + 3);
+    }
+    
+    drawNormalFruits(ctx, x, y, count) {
+        const positions = [
+            {x: -50, y: 60}, {x: 50, y: 55}, {x: 10, y: 65},
+            {x: -10, y: 70}, {x: 35, y: 65}, {x: -35, y: 70}
+        ];
+        
+        for (let i = 0; i < Math.min(count, positions.length); i++) {
+            const pos = positions[i];
+            
+            // 通常の実（赤みがかった色）
+            ctx.fillStyle = '#FF6347';
+            ctx.beginPath();
+            ctx.arc(x + pos.x, y + pos.y, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // 光沢
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.arc(x + pos.x - 1, y + pos.y - 1, 1.5, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+    }
+    
+    calculateGrowthStage(level) {
+        if (level === 0) return 'seed';
+        if (level <= 2) return 'sprout';
+        if (level <= 5) return 'sapling';
+        if (level <= 8) return 'young_trunk';
+        if (level <= 11) return 'first_branch';
+        if (level <= 15) return 'multi_branch';
+        if (level <= 20) return 'leafy';
+        if (level <= 25) return 'flowering';
+        if (level <= 30) return 'first_fruit';
+        return 'fruitful';
+    }
+    
+    drawSeed(ctx, x, y) {
+        ctx.fillStyle = '#8B4513';
+        ctx.beginPath();
+        ctx.arc(x, y - 5, 3, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+    
+    drawSprout(ctx, x, y, level) {
+        // 茎
+        ctx.strokeStyle = '#90EE90';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y - 10 - level * 3);
+        ctx.stroke();
+        
+        // 葉
+        ctx.fillStyle = '#228B22';
+        ctx.beginPath();
+        ctx.ellipse(x - 5, y - 10 - level * 3, 5, 3, -0.5, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(x + 5, y - 10 - level * 3, 5, 3, 0.5, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+    
+    drawYoungTree(ctx, x, y, level) {
+        const trunkHeight = 30 + (level - 6) * 5;
+        
+        // 幹
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(x - 3, y - trunkHeight, 6, trunkHeight);
+        
+        // 枝
+        if (level >= 9) {
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x, y - trunkHeight + 20);
+            ctx.lineTo(x - 15, y - trunkHeight + 10);
+            ctx.stroke();
+            
+            if (level >= 12) {
+                ctx.beginPath();
+                ctx.moveTo(x, y - trunkHeight + 15);
+                ctx.lineTo(x + 15, y - trunkHeight + 5);
+                ctx.stroke();
+            }
+        }
+        
+        // 葉っぱ
+        ctx.fillStyle = '#228B22';
+        ctx.beginPath();
+        ctx.arc(x, y - trunkHeight, 15, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+    
+    drawMatureTree(ctx, x, y, level, isCompleted) {
+        const trunkHeight = 80;
+        
+        // 幹
+        ctx.fillStyle = '#654321';
+        ctx.fillRect(x - 5, y - trunkHeight, 10, trunkHeight);
+        
+        // 枝と葉
+        ctx.fillStyle = '#228B22';
+        ctx.beginPath();
+        ctx.arc(x - 20, y - trunkHeight + 20, 20, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x + 20, y - trunkHeight + 20, 20, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x, y - trunkHeight, 25, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // 花（レベル21-25）
+        if (level >= 21 && level <= 25) {
+            this.drawFlowers(ctx, x, y - trunkHeight);
+        }
+        
+        // 実を描画（レベル26以降）
+        if (level >= 26) {
+            const fruitCount = Math.floor((level - 25) / 5) * 2 + 1;
+            this.drawFruits(ctx, x, y - trunkHeight, fruitCount, isCompleted);
+        }
+    }
+    
+    drawFlowers(ctx, x, y) {
+        // より多くの花を大きく描画
+        const flowerPositions = [
+            {x: -30, y: 20}, {x: 30, y: 15}, {x: 0, y: 0},
+            {x: -45, y: 40}, {x: 45, y: 35}, {x: -15, y: 30},
+            {x: 15, y: 25}, {x: -25, y: 10}, {x: 25, y: 45}
+        ];
+        
+        flowerPositions.forEach(pos => {
+            // 花びら
+            ctx.fillStyle = '#FFB6C1';
+            for (let i = 0; i < 5; i++) {
+                const angle = (i / 5) * 2 * Math.PI;
+                const petalX = x + pos.x + Math.cos(angle) * 8;
+                const petalY = y + pos.y + Math.sin(angle) * 8;
+                ctx.beginPath();
+                ctx.arc(petalX, petalY, 4, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+            // 花の中心
+            ctx.fillStyle = '#FFFF99';
+            ctx.beginPath();
+            ctx.arc(x + pos.x, y + pos.y, 3, 0, 2 * Math.PI);
+            ctx.fill();
+        });
+    }
+    
+    drawFruits(ctx, x, y, count, isCompleted) {
+        const positions = [
+            {x: -15, y: 10}, {x: 15, y: 15}, {x: 0, y: 5},
+            {x: -10, y: 20}, {x: 10, y: 8}, {x: -5, y: 12},
+            {x: 5, y: 18}, {x: -18, y: 5}, {x: 18, y: 10}
+        ];
+        
+        // アニメーション中は実を描画しない（または特別な描画）
+        if (this.harvestAnimating && this.harvestPracticeId === this.findPracticeIdByTreeData(x, y)) {
+            // アニメーション中の実を描画
+            for (let i = 0; i < Math.min(count, positions.length); i++) {
+                const pos = positions[i];
+                const animProgress = this.harvestAnimationProgress || 0;
+                
+                // 落下する実
+                const fallY = pos.y + (animProgress * 100);
+                const opacity = Math.max(0, 1 - animProgress);
+                
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(x + pos.x, y + fallY, 4 + animProgress * 2, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.restore();
+            }
+            return;
+        }
+        
+        for (let i = 0; i < Math.min(count, positions.length); i++) {
+            const pos = positions[i];
+            // 実の色（成熟度で変化）
+            if (isCompleted) {
+                ctx.fillStyle = '#FFD700'; // 金色
+            } else if (i < count / 3) {
+                ctx.fillStyle = '#90EE90'; // 緑
+            } else if (i < count * 2 / 3) {
+                ctx.fillStyle = '#FFD700'; // 黄
+            } else {
+                ctx.fillStyle = '#FF6347'; // 赤
+            }
+            
+            ctx.beginPath();
+            ctx.arc(x + pos.x, y + pos.y, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // 実の光沢
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.arc(x + pos.x - 1, y + pos.y - 1, 1.5, 0, 2 * Math.PI);
+            ctx.fill();
         }
     }
 
@@ -544,9 +1048,30 @@ class PianoPracticeApp {
         // マスター評価の場合は完了フラグを立てる
         if (this.selectedLevel === 10) {
             practice.isCompleted = true;
+            // スキルツリー表示の場合は収穫アニメーションを後で開始
+            this.shouldShowHarvestAnimation = this.currentView === 'tree';
         }
         
         this.saveData();
+        
+        // アニメーションをキューに追加
+        if (newLevel > oldLevel) {
+            this.addToAnimationQueue({
+                type: 'growth',
+                songId: this.currentSongId,
+                fromLevel: oldLevel,
+                toLevel: newLevel
+            });
+        }
+        
+        if (this.selectedLevel === 10) {
+            this.addToAnimationQueue({
+                type: 'fruitAdd',
+                songId: this.currentSongId,
+                practiceId: practice.id,
+                practiceTitle: practice.title
+            });
+        }
         
         if (newLevel > oldLevel || this.selectedLevel === 10) {
             this.showLevelUpModal(practice, Math.floor(oldLevel), Math.floor(newLevel));
@@ -574,7 +1099,25 @@ class PianoPracticeApp {
 
     closeLevelUpModal() {
         document.getElementById('level-up-modal').classList.remove('active');
-        this.showPracticeScreen();
+        
+        // 収穫アニメーションが予約されている場合
+        if (this.shouldShowHarvestAnimation) {
+            this.shouldShowHarvestAnimation = false;
+            this.showPracticeScreen();
+            // スキルツリー表示に切り替えてアニメーションを開始
+            setTimeout(() => {
+                this.showSkillTreeView();
+                setTimeout(() => {
+                    const song = this.data.songs[this.currentSongId];
+                    const practice = song.practices.find(p => p.id === this.currentPracticeId);
+                    if (practice && practice.isCompleted) {
+                        this.startSingleFruitHarvest(practice);
+                    }
+                }, 500);
+            }, 100);
+        } else {
+            this.showPracticeScreen();
+        }
     }
 
     async generateAIMessage(practice, oldLevel, newLevel) {
@@ -896,6 +1439,341 @@ class PianoPracticeApp {
                 this.renderSkillTree();
             }
         }
+    }
+    
+    startSingleFruitHarvest(practice) {
+        // 個別の金色の実の収穫アニメーション
+        this.harvestAnimating = true;
+        this.harvestPracticeId = practice.id;
+        this.harvestAnimationProgress = 0;
+        this.harvestType = 'single';
+        
+        const animationDuration = 1500; // 1.5秒間
+        const startTime = performance.now();
+        
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            this.harvestAnimationProgress = Math.min(elapsed / animationDuration, 1);
+            
+            // スキルツリーを再描画
+            if (this.currentView === 'tree') {
+                this.renderSkillTree();
+            }
+            
+            if (this.harvestAnimationProgress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                // アニメーション終了
+                this.harvestAnimating = false;
+                this.harvestAnimationProgress = 0;
+                this.harvestPracticeId = null;
+                this.harvestType = null;
+                this.renderSkillTree();
+                
+                // 収穫完了メッセージを表示
+                this.showSingleHarvestMessage(practice);
+                
+                // 全項目マスターのチェック
+                const song = this.data.songs[this.currentSongId];
+                const allMastered = song.practices.every(p => p.isCompleted);
+                if (allMastered) {
+                    setTimeout(() => {
+                        this.startGrandHarvestAnimation();
+                    }, 2000);
+                }
+            }
+        };
+        
+        requestAnimationFrame(animate);
+    }
+    
+    startGrandHarvestAnimation() {
+        // 全項目マスター時の大収穫祭
+        this.harvestAnimating = true;
+        this.harvestAnimationProgress = 0;
+        this.harvestType = 'grand';
+        
+        const animationDuration = 3000; // 3秒間
+        const startTime = performance.now();
+        
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            this.harvestAnimationProgress = Math.min(elapsed / animationDuration, 1);
+            
+            // スキルツリーを再描画
+            if (this.currentView === 'tree') {
+                this.renderSkillTree();
+            }
+            
+            if (this.harvestAnimationProgress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                // アニメーション終了
+                this.harvestAnimating = false;
+                this.harvestAnimationProgress = 0;
+                this.harvestType = null;
+                this.renderSkillTree();
+                
+                // 大収穫祭メッセージを表示
+                this.showGrandHarvestMessage();
+            }
+        };
+        
+        requestAnimationFrame(animate);
+    }
+    
+    findPracticeIdByTreeData(x, y) {
+        // 木の位置から練習IDを逆引き
+        const song = this.data.songs[this.currentSongId];
+        const width = 360;
+        const treeSpacing = width / (song.practices.filter(p => !p.isCompleted).length + 1);
+        
+        let index = 0;
+        for (const practice of song.practices) {
+            if (!practice.isCompleted) {
+                index++;
+                const treeX = treeSpacing * index;
+                if (Math.abs(treeX - x) < 30) {
+                    return practice.id;
+                }
+            }
+        }
+        return null;
+    }
+    
+    showSingleHarvestMessage(practice) {
+        // 個別の実の収穫メッセージ
+        const modal = document.createElement('div');
+        modal.className = 'harvest-complete-modal';
+        modal.innerHTML = `
+            <div class="harvest-message">
+                <div class="harvest-emoji">🍎✨</div>
+                <h3>${practice.title}</h3>
+                <p>マスターおめでとう！きんいろのみができたよ！</p>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        setTimeout(() => {
+            modal.classList.add('active');
+        }, 100);
+        
+        setTimeout(() => {
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.remove();
+            }, 300);
+        }, 2500);
+    }
+    
+    showGrandHarvestMessage() {
+        // 大収穫祭のメッセージ
+        const song = this.data.songs[this.currentSongId];
+        const modal = document.createElement('div');
+        modal.className = 'harvest-complete-modal grand-harvest';
+        modal.innerHTML = `
+            <div class="harvest-message grand">
+                <div class="harvest-emoji">🎆🎉🍎🎊🎆</div>
+                <h3>大収穫祭！</h3>
+                <p>「${song.title}」をかんぺきにマスターしたよ！</p>
+                <p class="grand-message">すごい！すごい！ほんとうによくがんばったね！</p>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        setTimeout(() => {
+            modal.classList.add('active');
+        }, 100);
+        
+        setTimeout(() => {
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.remove();
+            }, 300);
+        }, 4000);
+    }
+    
+    showPracticeSelector() {
+        // 練習項目選択のポップアップを表示
+        const modal = document.createElement('div');
+        modal.className = 'practice-selector-modal';
+        const song = this.data.songs[this.currentSongId];
+        
+        let practiceListHTML = '';
+        song.practices.forEach(practice => {
+            const status = practice.isCompleted ? '★' : '';
+            const className = practice.isCompleted ? 'completed' : '';
+            practiceListHTML += `
+                <div class="practice-selector-item ${className}" onclick="app.selectPracticeFromTree('${practice.id}')">
+                    <span class="practice-status">${status}</span>
+                    <span class="practice-name">${practice.title}</span>
+                    <span class="practice-level">Lv.${Math.floor(practice.level)}</span>
+                </div>
+            `;
+        });
+        
+        modal.innerHTML = `
+            <div class="practice-selector-content">
+                <h3>練習するこうもくをえらんでね</h3>
+                <div class="practice-selector-list">
+                    ${practiceListHTML}
+                </div>
+                <button class="close-selector-btn" onclick="app.closePracticeSelector()">とじる</button>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        setTimeout(() => {
+            modal.classList.add('active');
+        }, 10);
+        
+        this.practiceSelectorModal = modal;
+    }
+    
+    selectPracticeFromTree(practiceId) {
+        this.closePracticeSelector();
+        this.showEvaluationScreen(practiceId);
+    }
+    
+    closePracticeSelector() {
+        if (this.practiceSelectorModal) {
+            this.practiceSelectorModal.classList.remove('active');
+            setTimeout(() => {
+                this.practiceSelectorModal.remove();
+                this.practiceSelectorModal = null;
+            }, 300);
+        }
+    }
+    
+    addToAnimationQueue(animation) {
+        // localStorageにアニメーションキューを保存
+        const queue = JSON.parse(localStorage.getItem('animationQueue') || '[]');
+        queue.push(animation);
+        localStorage.setItem('animationQueue', JSON.stringify(queue));
+    }
+    
+    processAnimationQueue() {
+        // 保存されたアニメーションキューを取得
+        const queue = JSON.parse(localStorage.getItem('animationQueue') || '[]');
+        
+        // 現在の曲に関連するアニメーションのみフィルタリング
+        const currentSongAnimations = queue.filter(anim => anim.songId === this.currentSongId);
+        
+        if (currentSongAnimations.length === 0) return;
+        
+        // キューをクリア
+        const remainingQueue = queue.filter(anim => anim.songId !== this.currentSongId);
+        localStorage.setItem('animationQueue', JSON.stringify(remainingQueue));
+        
+        // アニメーションを順番に実行
+        this.playQueuedAnimations(currentSongAnimations);
+    }
+    
+    async playQueuedAnimations(animations) {
+        for (const animation of animations) {
+            await this.playAnimation(animation);
+            // アニメーション間に少し待機
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+    }
+    
+    playAnimation(animation) {
+        return new Promise(resolve => {
+            if (animation.type === 'growth') {
+                this.playGrowthAnimation(animation.fromLevel, animation.toLevel, resolve);
+            } else if (animation.type === 'fruitAdd') {
+                this.playFruitAddAnimation(animation.practiceTitle, resolve);
+            } else {
+                resolve();
+            }
+        });
+    }
+    
+    playGrowthAnimation(fromLevel, toLevel, onComplete) {
+        // 木の成長アニメーション
+        const animationDuration = 1500;
+        const startTime = performance.now();
+        const levelDiff = toLevel - fromLevel;
+        
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / animationDuration, 1);
+            
+            // 一時的に現在のレベルをアニメーション用に調整
+            this.animationLevel = fromLevel + (levelDiff * this.easeOutCubic(progress));
+            
+            this.renderSkillTree();
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                this.animationLevel = null;
+                this.renderSkillTree();
+                onComplete();
+            }
+        };
+        
+        requestAnimationFrame(animate);
+    }
+    
+    playFruitAddAnimation(practiceTitle, onComplete) {
+        // 金色の実が追加されるアニメーション
+        const animationDuration = 1000;
+        const startTime = performance.now();
+        
+        this.newFruitAnimation = {
+            practiceTitle: practiceTitle,
+            progress: 0
+        };
+        
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / animationDuration, 1);
+            
+            this.newFruitAnimation.progress = progress;
+            this.renderSkillTree();
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                this.newFruitAnimation = null;
+                this.renderSkillTree();
+                
+                // 実追加完了メッセージ
+                this.showFruitAddedMessage(practiceTitle);
+                setTimeout(onComplete, 1500);
+            }
+        };
+        
+        requestAnimationFrame(animate);
+    }
+    
+    showFruitAddedMessage(practiceTitle) {
+        const message = document.createElement('div');
+        message.className = 'fruit-added-message';
+        message.innerHTML = `
+            <span class="fruit-icon">🍎</span>
+            <span class="message-text">${practiceTitle} のきんいろのみができた！</span>
+        `;
+        
+        document.body.appendChild(message);
+        
+        setTimeout(() => {
+            message.classList.add('active');
+        }, 10);
+        
+        setTimeout(() => {
+            message.classList.remove('active');
+            setTimeout(() => {
+                message.remove();
+            }, 300);
+        }, 2000);
+    }
+    
+    easeOutCubic(t) {
+        return 1 - Math.pow(1 - t, 3);
     }
 }
 

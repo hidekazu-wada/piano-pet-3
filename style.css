@@ -728,12 +728,8 @@ h2 {
 
 #skill-tree-canvas {
     width: 100%;
-    height: 400px;
-    cursor: grab;
-}
-
-#skill-tree-canvas:active {
-    cursor: grabbing;
+    height: 500px;
+    cursor: pointer;
 }
 
 .practice-actions {
@@ -870,4 +866,229 @@ h2 {
 
 .clear-btn:hover {
     background-color: #ff5252;
+}
+
+.harvest-complete-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.harvest-complete-modal.active {
+    opacity: 1;
+}
+
+.harvest-message {
+    background: linear-gradient(135deg, #fff9e6 0%, #ffeb99 100%);
+    padding: 60px;
+    border-radius: 30px;
+    text-align: center;
+    transform: scale(0.8);
+    transition: transform 0.3s ease;
+    box-shadow: 0 10px 40px rgba(255, 215, 0, 0.5);
+    border: 5px solid #ffd700;
+}
+
+.harvest-complete-modal.active .harvest-message {
+    transform: scale(1);
+}
+
+.harvest-emoji {
+    font-size: 5rem;
+    margin-bottom: 30px;
+    animation: bounce 0.6s ease infinite alternate;
+}
+
+.harvest-message h3 {
+    font-size: 2.5rem;
+    color: #d4a017;
+    margin-bottom: 20px;
+}
+
+.harvest-message p {
+    font-size: 1.5rem;
+    color: #b8860b;
+}
+
+.harvest-complete-modal.grand-harvest .harvest-message {
+    padding: 80px;
+    background: linear-gradient(135deg, #fff9e6 0%, #ffeb99 50%, #ffd700 100%);
+}
+
+.harvest-message.grand {
+    animation: grandCelebration 0.5s ease;
+}
+
+.grand-message {
+    margin-top: 20px;
+    font-size: 1.8rem !important;
+    font-weight: bold;
+    color: #d4a017 !important;
+}
+
+@keyframes grandCelebration {
+    0% {
+        transform: scale(0.5) rotate(-10deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1) rotate(5deg);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+@keyframes bounce {
+    from { transform: translateY(0); }
+    to { transform: translateY(-20px); }
+}
+
+.practice-selector-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1500;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.practice-selector-modal.active {
+    opacity: 1;
+}
+
+.practice-selector-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: 20px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 70vh;
+    overflow-y: auto;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.practice-selector-modal.active .practice-selector-content {
+    transform: scale(1);
+}
+
+.practice-selector-content h3 {
+    text-align: center;
+    color: #4a69ff;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
+
+.practice-selector-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.practice-selector-item {
+    background-color: #f8f9ff;
+    padding: 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 2px solid transparent;
+}
+
+.practice-selector-item:hover {
+    transform: translateX(5px);
+    border-color: #4a69ff;
+    background-color: #e6ebff;
+}
+
+.practice-selector-item.completed {
+    background-color: #fff9e6;
+    border-color: #ffd700;
+}
+
+.practice-status {
+    font-size: 1.2rem;
+    color: #ffd700;
+    width: 20px;
+}
+
+.practice-name {
+    flex: 1;
+    font-weight: bold;
+}
+
+.practice-level {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.close-selector-btn {
+    display: block;
+    margin: 0 auto;
+    background-color: #4a69ff;
+    color: white;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.close-selector-btn:hover {
+    background-color: #3a59ef;
+}
+
+.fruit-added-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background-color: white;
+    padding: 20px 40px;
+    border-radius: 30px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 1600;
+    border: 3px solid #ffd700;
+}
+
+.fruit-added-message.active {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.fruit-icon {
+    font-size: 2rem;
+    animation: bounce 0.5s ease infinite alternate;
+}
+
+.message-text {
+    font-size: 1.2rem;
+    color: #333;
+    font-weight: bold;
 }
