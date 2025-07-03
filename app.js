@@ -1496,7 +1496,8 @@ class PianoPracticeApp {
         const prefixes = {
             'ゆっくり': ['アンダンテ', 'レガート', 'ラルゴ'],
             'はやく': ['プレスト', 'アレグロ', 'ビバーチェ'],
-            'りょうて': ['デュエット', 'ハーモニー', 'アンサンブル']
+            'りょうて': ['デュエット', 'ハーモニー', 'アンサンブル'],
+            'ふつう': ['メロディ', 'リズム', 'ソナタ']  // デフォルトを追加
         };
         
         const suffixes = {
@@ -1514,7 +1515,9 @@ class PianoPracticeApp {
             'クワガタ': 'ガタロウ'
         };
         
-        const prefix = prefixes[analysis.tempo] || prefixes['ふつう'];
+        // より安全なフォールバック処理
+        const defaultPrefixes = ['メロディ', 'リズム', 'ソナタ'];
+        const prefix = prefixes[analysis.tempo] || prefixes['ふつう'] || defaultPrefixes;
         const selectedPrefix = prefix[Math.floor(Math.random() * prefix.length)];
         const suffix = suffixes[creature] || 'まる';
         
