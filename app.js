@@ -52,7 +52,7 @@ class PianoPracticeApp {
     pet7: {
       id: 'pet7',
       name: 'トランペットエレファント',
-      filename: 'monkey.mp4',
+      filename: 'elephant.mp4',
       audioFilename: 'elephant-sound.mp3',
       description:
         'おおきな ぞうさんです。とらんぺっとの ような おおきな はなで ふんふん と おとを たてます。やさしくて おとなしい せいかくです。',

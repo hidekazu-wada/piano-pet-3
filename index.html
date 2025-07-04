@@ -10,7 +10,7 @@
     <div id="app">
       <div id="home-screen" class="screen active">
         <header>
-          <h1>🎹 ピアノれんしゅう</h1>
+          <h1>🎹 ピアノペット3</h1>
           <p class="subtitle">きょうはどのきょくをれんしゅうする？</p>
         </header>
         <div class="song-list" id="song-list"></div>
@@ -201,7 +201,10 @@
         <div class="collection-content">
           <div class="collection-grid" id="collection-grid"></div>
           <div class="collection-actions">
-            <button class="reset-collection-btn" onclick="app.resetCollection()">
+            <button
+              class="reset-collection-btn"
+              onclick="app.resetCollection()"
+            >
               🔄 ずかんをリセット
             </button>
           </div>
@@ -315,7 +318,7 @@
         <div class="modal-content gacha-animation">
           <div class="gacha-animation-content">
             <h3>ガチャちゅう...</h3>
-            <video id="gacha-animation-video" autoplay>
+            <video id="gacha-animation-video">
               <source src="videos/gacha-animation.mp4" type="video/mp4" />
             </video>
             <p class="gacha-loading-text">どんなペットが出るかな？</p>
