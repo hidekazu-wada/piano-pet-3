@@ -1,229 +1,361 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Piano Practice Assistant</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
     <div id="app">
-        <div id="home-screen" class="screen active">
-            <header>
-                <h1>🎹 ピアノれんしゅう</h1>
-                <p class="subtitle">きょうはどのきょくをれんしゅうする？</p>
-            </header>
-            <div class="song-list" id="song-list">
-            </div>
-            <button class="add-song-btn" onclick="app.showAddSongModal()">+ あたらしいきょくをついか</button>
-            <button class="settings-btn" onclick="app.showSettingsScreen()">⚙️ せってい</button>
-        </div>
+      <div id="home-screen" class="screen active">
+        <header>
+          <h1>🎹 ピアノれんしゅう</h1>
+          <p class="subtitle">きょうはどのきょくをれんしゅうする？</p>
+        </header>
+        <div class="song-list" id="song-list"></div>
+        <button class="add-song-btn" onclick="app.showAddSongModal()">
+          + あたらしいきょくをついか
+        </button>
+        <button class="gacha-btn" onclick="app.showGachaScreen()">
+          🎁 ガチャ
+        </button>
+      </div>
 
-        <div id="practice-screen" class="screen">
-            <header>
-                <button class="back-btn" onclick="app.showHomeScreen()">←</button>
-                <h2 id="song-title"></h2>
-            </header>
-            <div class="practice-list" id="practice-list">
-            </div>
-            <div class="practice-actions">
-                <button class="add-practice-btn" onclick="app.showAddPracticeModal()">+ れんしゅうこうもくをついか</button>
-                <button class="add-practice-btn" onclick="app.showAddCheckPointModal()">+ ちゅういてんをついか</button>
-            </div>
+      <div id="practice-screen" class="screen">
+        <header>
+          <button class="back-btn" onclick="app.showHomeScreen()">←</button>
+          <h2 id="song-title"></h2>
+        </header>
+        <div class="practice-list" id="practice-list"></div>
+        <div class="practice-actions">
+          <button class="add-practice-btn" onclick="app.showAddPracticeModal()">
+            + れんしゅうこうもくをついか
+          </button>
+          <button
+            class="add-practice-btn"
+            onclick="app.showAddCheckPointModal()"
+          >
+            + ちゅういてんをついか
+          </button>
         </div>
+      </div>
 
-        <div id="evaluation-screen" class="screen">
-            <header>
-                <button class="back-btn" onclick="app.showPracticeScreen()">←</button>
-                <h2 id="practice-title"></h2>
-            </header>
-            <div class="evaluation-content">
-                <div class="checkpoints-section">
-                    <p>きをつけるポイント</p>
-                    <div class="checkpoint-list" id="checkpoint-list">
-                    </div>
-                </div>
-                <div class="level-display">
-                    <p>いまのレベル</p>
-                    <div class="level-number" id="current-level">0</div>
-                    <div class="level-breakdown" id="level-breakdown">
-                        <div class="breakdown-item">
-                            <span class="breakdown-label">れんしゅうじかん:</span>
-                            <span class="breakdown-value" id="time-points">0pt</span>
-                        </div>
-                        <div class="breakdown-item">
-                            <span class="breakdown-label">できばえ:</span>
-                            <span class="breakdown-value" id="performance-points">0pt</span>
-                        </div>
-                        <div class="breakdown-item">
-                            <span class="breakdown-label">とりくみかた:</span>
-                            <span class="breakdown-value" id="attitude-points">0pt</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="level-input">
-                    <p>きょうのできばえは？</p>
-                    <div class="level-options" id="level-options">
-                        <button class="level-option" data-level="0">
-                            <span class="emoji">😴</span>
-                            <span class="label">やるまえ</span>
-                        </button>
-                        <button class="level-option" data-level="3">
-                            <span class="emoji">💪</span>
-                            <span class="label">がんばりちゅう</span>
-                        </button>
-                        <button class="level-option" data-level="6">
-                            <span class="emoji">😊</span>
-                            <span class="label">まちがえるけど<br>できてきた</span>
-                        </button>
-                        <button class="level-option" data-level="9">
-                            <span class="emoji">😄</span>
-                            <span class="label">まちがえないで<br>できた</span>
-                        </button>
-                        <button class="level-option" data-level="10">
-                            <span class="emoji">🌟</span>
-                            <span class="label">マスター</span>
-                        </button>
-                    </div>
-                </div>
-                <div class="attitude-input">
-                    <p>きょうのとりくみかた</p>
-                    <div class="attitude-options" id="attitude-options">
-                        <button class="attitude-option" data-attitude="1">
-                            <span class="emoji">😑</span>
-                            <span class="label">あまりしゅうちゅう<br>できなかった</span>
-                        </button>
-                        <button class="attitude-option" data-attitude="2">
-                            <span class="emoji">👍</span>
-                            <span class="label">おやにいわれて<br>がんばれた</span>
-                        </button>
-                        <button class="attitude-option" data-attitude="3">
-                            <span class="emoji">🌟</span>
-                            <span class="label">じぶんでかんがえて<br>かいぜんできた</span>
-                        </button>
-                    </div>
-                </div>
-                <div class="practice-time">
-                    <p>れんしゅうじかん</p>
-                    <div class="timer-display">
-                        <div class="timer-count" id="timer-display">00:00</div>
-                        <div class="timer-controls">
-                            <button class="timer-btn start" id="timer-start" onclick="app.startTimer()">
-                                <span class="icon">▶️</span>
-                                <span>スタート</span>
-                            </button>
-                            <button class="timer-btn stop" id="timer-stop" onclick="app.stopTimer()" style="display: none;">
-                                <span class="icon">⏸️</span>
-                                <span>ストップ</span>
-                            </button>
-                            <button class="timer-btn reset" onclick="app.resetTimer()">
-                                <span class="icon">🔄</span>
-                                <span>リセット</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="total-time">
-                        <p>これまでのれんしゅうじかん: <span id="total-practice-time">0</span>ぷん</p>
-                    </div>
-                </div>
-                <div class="button-group">
-                    <button class="save-btn" onclick="app.saveEvaluation()">ほぞん</button>
-                    <button class="clear-btn" onclick="app.clearPracticeData()">このれんしゅうのデータをけす</button>
-                </div>
+      <div id="evaluation-screen" class="screen">
+        <header>
+          <button class="back-btn" onclick="app.showPracticeScreen()">←</button>
+          <h2 id="practice-title"></h2>
+        </header>
+        <div class="evaluation-content">
+          <div class="checkpoints-section">
+            <p>きをつけるポイント</p>
+            <div class="checkpoint-list" id="checkpoint-list"></div>
+          </div>
+          <div class="level-display">
+            <p>いまのレベル</p>
+            <div class="level-number" id="current-level">0</div>
+            <div class="level-breakdown" id="level-breakdown">
+              <div class="breakdown-item">
+                <span class="breakdown-label">れんしゅうじかん:</span>
+                <span class="breakdown-value" id="time-points">0pt</span>
+              </div>
+              <div class="breakdown-item">
+                <span class="breakdown-label">できばえ:</span>
+                <span class="breakdown-value" id="performance-points">0pt</span>
+              </div>
+              <div class="breakdown-item">
+                <span class="breakdown-label">とりくみかた:</span>
+                <span class="breakdown-value" id="attitude-points">0pt</span>
+              </div>
             </div>
+          </div>
+          <div class="level-input">
+            <p>きょうのできばえは？</p>
+            <div class="level-options" id="level-options">
+              <button class="level-option" data-level="0">
+                <span class="emoji">😴</span>
+                <span class="label">やるまえ</span>
+              </button>
+              <button class="level-option" data-level="3">
+                <span class="emoji">💪</span>
+                <span class="label">がんばりちゅう</span>
+              </button>
+              <button class="level-option" data-level="6">
+                <span class="emoji">😊</span>
+                <span class="label">まちがえるけど<br />できてきた</span>
+              </button>
+              <button class="level-option" data-level="9">
+                <span class="emoji">😄</span>
+                <span class="label">まちがえないで<br />できた</span>
+              </button>
+              <button class="level-option" data-level="10">
+                <span class="emoji">🌟</span>
+                <span class="label">マスター</span>
+              </button>
+            </div>
+          </div>
+          <div class="attitude-input">
+            <p>きょうのとりくみかた</p>
+            <div class="attitude-options" id="attitude-options">
+              <button class="attitude-option" data-attitude="1">
+                <span class="emoji">😑</span>
+                <span class="label">あまりしゅうちゅう<br />できなかった</span>
+              </button>
+              <button class="attitude-option" data-attitude="2">
+                <span class="emoji">👍</span>
+                <span class="label">おやにいわれて<br />がんばれた</span>
+              </button>
+              <button class="attitude-option" data-attitude="3">
+                <span class="emoji">🌟</span>
+                <span class="label"
+                  >じぶんでかんがえて<br />かいぜんできた</span
+                >
+              </button>
+            </div>
+          </div>
+          <div class="practice-time">
+            <p>れんしゅうじかん</p>
+            <div class="timer-display">
+              <div class="timer-count" id="timer-display">00:00</div>
+              <div class="timer-controls">
+                <button
+                  class="timer-btn start"
+                  id="timer-start"
+                  onclick="app.startTimer()"
+                >
+                  <span class="icon">▶️</span>
+                  <span>スタート</span>
+                </button>
+                <button
+                  class="timer-btn stop"
+                  id="timer-stop"
+                  onclick="app.stopTimer()"
+                  style="display: none"
+                >
+                  <span class="icon">⏸️</span>
+                  <span>ストップ</span>
+                </button>
+                <button class="timer-btn reset" onclick="app.resetTimer()">
+                  <span class="icon">🔄</span>
+                  <span>リセット</span>
+                </button>
+              </div>
+            </div>
+            <div class="total-time">
+              <p>
+                これまでのれんしゅうじかん:
+                <span id="total-practice-time">0</span>ぷん
+              </p>
+            </div>
+          </div>
+          <div class="button-group">
+            <button class="save-btn" onclick="app.saveEvaluation()">
+              ほぞん
+            </button>
+            <button class="clear-btn" onclick="app.clearPracticeData()">
+              このれんしゅうのデータをけす
+            </button>
+          </div>
         </div>
+      </div>
 
-        <div id="settings-screen" class="screen">
-            <header>
-                <button class="back-btn" onclick="app.showHomeScreen()">←</button>
-                <h2>せってい</h2>
-            </header>
-            <div class="settings-content">
-                <div class="setting-group">
-                    <label>Gemini API キー</label>
-                    <input type="password" id="gemini-api-key" placeholder="API キーを入力">
-                </div>
-                <div class="setting-group">
-                    <label>11Labs API キー</label>
-                    <input type="password" id="elevenlabs-api-key" placeholder="API キーを入力">
-                </div>
-                <button class="save-btn" onclick="app.saveSettings()">ほぞん</button>
+      <div id="gacha-screen" class="screen">
+        <header>
+          <button class="back-btn" onclick="app.backToHome()">←</button>
+          <h2>🎁 ガチャ</h2>
+        </header>
+        <div class="gacha-content">
+          <div class="points-display">
+            <div class="points-info">
+              <p>もっているポイント</p>
+              <div class="points-number" id="gacha-points">0</div>
             </div>
+            <div class="gacha-cost">
+              <p>1回 1000ポイント</p>
+            </div>
+          </div>
+          <div class="gacha-button-container">
+            <button
+              class="gacha-button"
+              id="gacha-button"
+              onclick="app.performGacha()"
+            >
+              <span class="gacha-text">ガチャをひく</span>
+              <span class="gacha-animation">🎁</span>
+            </button>
+          </div>
+          <div class="collection-info">
+            <p>コレクション <span id="collection-count">0/5</span></p>
+            <button class="collection-btn" onclick="app.showCollectionScreen()">
+              ずかんをみる
+            </button>
+          </div>
         </div>
+      </div>
 
-        <div id="level-up-modal" class="modal">
-            <div class="modal-content">
-                <div class="character-image">🐕</div>
-                <h3>レベルアップ！</h3>
-                <p id="level-up-message"></p>
-                <button onclick="app.closeLevelUpModal()">とじる</button>
-            </div>
+      <div id="collection-screen" class="screen">
+        <header>
+          <button class="back-btn" onclick="app.backToGacha()">←</button>
+          <h2>📚 ペットずかん</h2>
+        </header>
+        <div class="collection-content">
+          <div class="collection-grid" id="collection-grid"></div>
+          <div class="collection-actions">
+            <button class="reset-collection-btn" onclick="app.resetCollection()">
+              🔄 ずかんをリセット
+            </button>
+          </div>
         </div>
+      </div>
 
-        <div id="add-checkpoint-modal" class="modal">
-            <div class="modal-content">
-                <h3>ちゅういてんをついか</h3>
-                <div class="modal-form">
-                    <label>れんしゅうこうもく</label>
-                    <select id="practice-select">
-                    </select>
-                    <label>きをつけること</label>
-                    <input type="text" id="checkpoint-text" placeholder="れい: ゆびばんごうをまもる">
-                    <div class="modal-buttons">
-                        <button onclick="app.closeAddCheckPointModal()">キャンセル</button>
-                        <button class="primary" onclick="app.addCheckPoint()">ついか</button>
-                    </div>
-                </div>
-            </div>
+      <div id="level-up-modal" class="modal">
+        <div class="modal-content">
+          <div class="character-image">🐕</div>
+          <h3>レベルアップ！</h3>
+          <p id="level-up-message"></p>
+          <button onclick="app.closeLevelUpModal()">とじる</button>
         </div>
+      </div>
 
-        <div id="add-song-modal" class="modal">
-            <div class="modal-content">
-                <h3>あたらしいきょくをついか</h3>
-                <div class="modal-form">
-                    <label>きょくのなまえ</label>
-                    <input type="text" id="new-song-title" placeholder="れい: きらきらぼし">
-                    <div class="modal-buttons">
-                        <button onclick="app.closeAddSongModal()">キャンセル</button>
-                        <button class="primary" onclick="app.addSong()">ついか</button>
-                    </div>
-                </div>
+      <div id="add-checkpoint-modal" class="modal">
+        <div class="modal-content">
+          <h3>ちゅういてんをついか</h3>
+          <div class="modal-form">
+            <label>れんしゅうこうもく</label>
+            <select id="practice-select"></select>
+            <label>きをつけること</label>
+            <input
+              type="text"
+              id="checkpoint-text"
+              placeholder="れい: ゆびばんごうをまもる"
+            />
+            <div class="modal-buttons">
+              <button onclick="app.closeAddCheckPointModal()">
+                キャンセル
+              </button>
+              <button class="primary" onclick="app.addCheckPoint()">
+                ついか
+              </button>
             </div>
+          </div>
         </div>
+      </div>
 
-        <div id="add-practice-modal" class="modal">
-            <div class="modal-content">
-                <h3>れんしゅうこうもくをついか</h3>
-                <div class="modal-form">
-                    <label>れんしゅうのなまえ</label>
-                    <input type="text" id="new-practice-title" placeholder="れい: 1だんめ りょうてでゆっくり">
-                    <label>せつめい</label>
-                    <input type="text" id="new-practice-description" placeholder="れい: テンポ60でただしく">
-                    <div class="modal-buttons">
-                        <button onclick="app.closeAddPracticeModal()">キャンセル</button>
-                        <button class="primary" onclick="app.addPractice()">ついか</button>
-                    </div>
-                </div>
+      <div id="add-song-modal" class="modal">
+        <div class="modal-content">
+          <h3>あたらしいきょくをついか</h3>
+          <div class="modal-form">
+            <label>きょくのなまえ</label>
+            <input
+              type="text"
+              id="new-song-title"
+              placeholder="れい: きらきらぼし"
+            />
+            <div class="modal-buttons">
+              <button onclick="app.closeAddSongModal()">キャンセル</button>
+              <button class="primary" onclick="app.addSong()">ついか</button>
             </div>
+          </div>
         </div>
+      </div>
 
-        <div id="edit-practice-modal" class="modal">
-            <div class="modal-content">
-                <h3>れんしゅうこうもくをへんしゅう</h3>
-                <div class="modal-form">
-                    <label>れんしゅうのなまえ</label>
-                    <input type="text" id="edit-practice-title" placeholder="れい: 1だんめ りょうてでゆっくり">
-                    <label>せつめい</label>
-                    <input type="text" id="edit-practice-description" placeholder="れい: テンポ60でただしく">
-                    <div class="modal-buttons">
-                        <button onclick="app.closeEditPracticeModal()">キャンセル</button>
-                        <button class="primary" onclick="app.updatePractice()">こうしん</button>
-                    </div>
-                </div>
+      <div id="add-practice-modal" class="modal">
+        <div class="modal-content">
+          <h3>れんしゅうこうもくをついか</h3>
+          <div class="modal-form">
+            <label>れんしゅうのなまえ</label>
+            <input
+              type="text"
+              id="new-practice-title"
+              placeholder="れい: 1だんめ りょうてでゆっくり"
+            />
+            <label>せつめい</label>
+            <input
+              type="text"
+              id="new-practice-description"
+              placeholder="れい: テンポ60でただしく"
+            />
+            <div class="modal-buttons">
+              <button onclick="app.closeAddPracticeModal()">キャンセル</button>
+              <button class="primary" onclick="app.addPractice()">
+                ついか
+              </button>
             </div>
+          </div>
         </div>
+      </div>
+
+      <div id="edit-practice-modal" class="modal">
+        <div class="modal-content">
+          <h3>れんしゅうこうもくをへんしゅう</h3>
+          <div class="modal-form">
+            <label>れんしゅうのなまえ</label>
+            <input
+              type="text"
+              id="edit-practice-title"
+              placeholder="れい: 1だんめ りょうてでゆっくり"
+            />
+            <label>せつめい</label>
+            <input
+              type="text"
+              id="edit-practice-description"
+              placeholder="れい: テンポ60でただしく"
+            />
+            <div class="modal-buttons">
+              <button onclick="app.closeEditPracticeModal()">キャンセル</button>
+              <button class="primary" onclick="app.updatePractice()">
+                こうしん
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="gacha-animation-modal" class="modal">
+        <div class="modal-content gacha-animation">
+          <div class="gacha-animation-content">
+            <h3>ガチャちゅう...</h3>
+            <video id="gacha-animation-video" autoplay>
+              <source src="videos/gacha-animation.mp4" type="video/mp4" />
+            </video>
+            <p class="gacha-loading-text">どんなペットが出るかな？</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="gacha-result-modal" class="modal">
+        <div class="modal-content gacha-result">
+          <div class="gacha-result-content">
+            <h3 id="gacha-result-message">新しいペットが仲間になったよ！</h3>
+            <video id="gacha-result-video" autoplay muted loop>
+              <source src="" type="video/mp4" />
+            </video>
+            <p id="gacha-result-video-name"></p>
+            <button onclick="app.closeGachaResult()">とじる</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="animal-detail-modal" class="modal">
+        <div class="modal-content animal-detail">
+          <div class="animal-detail-content">
+            <h3 id="animal-detail-name"></h3>
+            <video id="animal-detail-video" autoplay muted loop>
+              <source src="" type="video/mp4" />
+            </video>
+            <p id="animal-detail-description"></p>
+            <div class="animal-detail-buttons">
+              <button class="play-sound-btn" onclick="app.playAnimalSound()">
+                <span class="icon">🔊</span>
+                <span>ボイス</span>
+              </button>
+              <button onclick="app.closeAnimalDetail()">とじる</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="app.js"></script>
-</body>
+  </body>
 </html>
