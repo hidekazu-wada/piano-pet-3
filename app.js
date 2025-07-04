@@ -1,4 +1,49 @@
 class PianoPracticeApp {
+  // ゲームバランス調整用設定（ここを変更することで簡単に調整可能）
+  static GAME_CONFIG = {
+    // ===== レベルシステム設定 =====
+    level: {
+      // 時間ポイント設定
+      timePointsInterval: 5, // 何分ごとに1ポイント（分）
+
+      // 出来栄えポイント設定
+      performance: {
+        0: 0, // やるまえ
+        3: 1, // がんばりちゅう
+        6: 2, // まちがえるけどできてきた
+        9: 3, // まちがえないでできた
+        10: 5, // マスター
+      },
+
+      // 取り組み姿勢ポイント設定
+      attitude: {
+        0: 0, // 未選択
+        1: 0, // あまりしゅうちゅうできなかった
+        2: 1, // おやにいわれてがんばれた
+        3: 3, // じぶんでかんがえてかいぜんできた
+      },
+    },
+
+    // ===== ガチャシステム設定 =====
+    gacha: {
+      // ガチャコスト
+      cost: 1000, // 1回あたりのポイント
+
+      // ガチャポイント獲得設定
+      rewards: {
+        levelUpPoints: 10, // レベルアップごとの獲得ポイント
+        masterBonus: 50, // マスター達成時のボーナスポイント
+
+        // 段階的ボーナス
+        levelMilestones: {
+          10: 10, // レベル10到達ボーナス
+          20: 20, // レベル20到達ボーナス
+          30: 30, // レベル30到達ボーナス
+        },
+      },
+    },
+  };
+
   // 動物データの一元管理
   static ANIMAL_DATA = {
     pet1: {
@@ -511,26 +556,17 @@ class PianoPracticeApp {
     const practiceMinutes = Math.floor(practiceSeconds / 60);
 
     // ポイント計算（全体的に抑えめに調整）
-    const timePoints = Math.floor(practiceMinutes / 2); // 2分ごとに1ポイント
+    const timePoints = Math.floor(
+      practiceMinutes / PianoPracticeApp.GAME_CONFIG.level.timePointsInterval
+    );
 
-    // 出来栄えポイント（間違えないでできたを高めに）
-    const performanceMap = {
-      0: 0, // やるまえ
-      3: 2, // がんばりちゅう
-      6: 4, // まちがえるけどできてきた
-      9: 8, // まちがえないでできた（2番目に高い）
-      10: 10, // マスター
-    };
-    const performancePoints = performanceMap[this.selectedLevel] || 0;
+    // 出来栄えポイント（設定から取得）
+    const performancePoints =
+      PianoPracticeApp.GAME_CONFIG.level.performance[this.selectedLevel] || 0;
 
-    // 取り組み姿勢ポイント（自分で考えて改善を最高に）
-    const attitudeMap = {
-      0: 0, // 未選択
-      1: 1, // あまりしゅうちゅうできなかった
-      2: 3, // おやにいわれてがんばれた
-      3: 10, // じぶんでかんがえてかいぜんできた（最高ポイント）
-    };
-    const attitudePoints = attitudeMap[this.selectedAttitude] || 0;
+    // 取り組み姿勢ポイント（設定から取得）
+    const attitudePoints =
+      PianoPracticeApp.GAME_CONFIG.level.attitude[this.selectedAttitude] || 0;
 
     // レベル内訳を保存
     if (!practice.levelBreakdown) {
@@ -541,9 +577,10 @@ class PianoPracticeApp {
       };
     }
 
-    // 累積時間ポイントを計算（2分ごとに1ポイント）
+    // 累積時間ポイントを計算（設定から取得）
     const totalTimePoints = Math.floor(
-      (practice.practiceTime + practiceSeconds) / 120
+      (practice.practiceTime + practiceSeconds) /
+        (PianoPracticeApp.GAME_CONFIG.level.timePointsInterval * 60)
     );
 
     // ポイントを累積
@@ -609,16 +646,25 @@ class PianoPracticeApp {
   }
 
   calculateGachaPoints(oldLevel, newLevel, isMastered) {
+    const config = PianoPracticeApp.GAME_CONFIG.gacha.rewards;
     let points = 0;
 
-    // レベルアップごとに50ポイント
+    // レベルアップごとのポイント（設定から取得）
     const levelDiff = Math.floor(newLevel) - Math.floor(oldLevel);
-    points += levelDiff * 50;
+    points += levelDiff * config.levelUpPoints;
 
-    // マスター達成時は追加で200ポイント
+    // マスター達成時のボーナス（設定から取得）
     if (isMastered) {
-      points += 200;
+      points += config.masterBonus;
     }
+
+    // 段階的ボーナス（設定から取得）
+    const currentLevel = Math.floor(newLevel);
+    Object.entries(config.levelMilestones).forEach(([milestone, bonus]) => {
+      if (currentLevel >= parseInt(milestone)) {
+        points += bonus;
+      }
+    });
 
     return points;
   }
@@ -966,6 +1012,10 @@ class PianoPracticeApp {
     const pointsDisplay = document.getElementById('gacha-points');
     pointsDisplay.textContent = this.data.gachaPoints;
 
+    // ガチャコストを動的に表示
+    const costDisplay = document.getElementById('gacha-cost-display');
+    costDisplay.textContent = `1回 ${PianoPracticeApp.GAME_CONFIG.gacha.cost}ポイント`;
+
     const gachaButton = document.getElementById('gacha-button');
     const allCollected = this.isAllCharactersCollected();
 
@@ -977,7 +1027,8 @@ class PianoPracticeApp {
         <span class="gacha-animation">🎉</span>
       `;
     } else {
-      gachaButton.disabled = this.data.gachaPoints < 1000;
+      gachaButton.disabled =
+        this.data.gachaPoints < PianoPracticeApp.GAME_CONFIG.gacha.cost;
       gachaButton.innerHTML = `
         <span class="gacha-text">ガチャをひく</span>
         <span class="gacha-animation">🎁</span>
@@ -996,14 +1047,18 @@ class PianoPracticeApp {
 
   performGacha() {
     // ポイント不足または全キャラクター収集済みの場合は実行しない
-    if (this.data.gachaPoints < 1000 || this.isAllCharactersCollected()) return;
+    if (
+      this.data.gachaPoints < PianoPracticeApp.GAME_CONFIG.gacha.cost ||
+      this.isAllCharactersCollected()
+    )
+      return;
 
     // ガチャボタンを無効化
     const gachaButton = document.getElementById('gacha-button');
     gachaButton.disabled = true;
     gachaButton.textContent = 'ガチャちゅう...';
 
-    this.data.gachaPoints -= 1000;
+    this.data.gachaPoints -= PianoPracticeApp.GAME_CONFIG.gacha.cost;
     this.saveData();
 
     // ガチャ演出動画を表示
