@@ -759,6 +759,29 @@ h2 {
     margin-top: 20px;
 }
 
+.save-btn {
+    background-color: #4a69ff;
+    color: white;
+    border: none;
+    padding: 20px 30px;
+    border-radius: 15px;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: bold;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(74, 105, 255, 0.3);
+}
+
+.save-btn:hover {
+    background-color: #3a59ef;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(74, 105, 255, 0.4);
+}
+
 .clear-btn {
     background-color: #ff6b6b;
     color: white;

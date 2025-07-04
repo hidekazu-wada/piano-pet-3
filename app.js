@@ -102,6 +102,14 @@ class PianoPracticeApp {
       description:
         'おおきな ぞうさんです。とらんぺっとの ような おおきな はなで ふんふん と おとを たてます。やさしくて おとなしい せいかくです。',
     },
+    pet8: {
+      id: 'pet8',
+      name: 'ピアニカジラフ',
+      filename: 'giraffe.mp4',
+      audioFilename: 'giraffe-sound.mp3',
+      description:
+        'とても おおきな きりんです。ながい くびで たかい きの はっぱを たべます。おっとりしていて、やさしい せいかくです。',
+    },
   };
 
   constructor() {

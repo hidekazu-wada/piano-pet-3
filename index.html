@@ -51,22 +51,39 @@
             <p>きをつけるポイント</p>
             <div class="checkpoint-list" id="checkpoint-list"></div>
           </div>
-          <div class="level-display">
-            <p>いまのレベル</p>
-            <div class="level-number" id="current-level">0</div>
-            <div class="level-breakdown" id="level-breakdown">
-              <div class="breakdown-item">
-                <span class="breakdown-label">れんしゅうじかん:</span>
-                <span class="breakdown-value" id="time-points">0pt</span>
+          <div class="practice-time">
+            <p>れんしゅうじかん</p>
+            <div class="timer-display">
+              <div class="timer-count" id="timer-display">00:00</div>
+              <div class="timer-controls">
+                <button
+                  class="timer-btn start"
+                  id="timer-start"
+                  onclick="app.startTimer()"
+                >
+                  <span class="icon">▶️</span>
+                  <span>スタート</span>
+                </button>
+                <button
+                  class="timer-btn stop"
+                  id="timer-stop"
+                  onclick="app.stopTimer()"
+                  style="display: none"
+                >
+                  <span class="icon">⏸️</span>
+                  <span>ストップ</span>
+                </button>
+                <button class="timer-btn reset" onclick="app.resetTimer()">
+                  <span class="icon">🔄</span>
+                  <span>リセット</span>
+                </button>
               </div>
-              <div class="breakdown-item">
-                <span class="breakdown-label">できばえ:</span>
-                <span class="breakdown-value" id="performance-points">0pt</span>
-              </div>
-              <div class="breakdown-item">
-                <span class="breakdown-label">とりくみかた:</span>
-                <span class="breakdown-value" id="attitude-points">0pt</span>
-              </div>
+            </div>
+            <div class="total-time">
+              <p>
+                これまでのれんしゅうじかん:
+                <span id="total-practice-time">0</span>ぷん
+              </p>
             </div>
           </div>
           <div class="level-input">
@@ -113,39 +130,22 @@
               </button>
             </div>
           </div>
-          <div class="practice-time">
-            <p>れんしゅうじかん</p>
-            <div class="timer-display">
-              <div class="timer-count" id="timer-display">00:00</div>
-              <div class="timer-controls">
-                <button
-                  class="timer-btn start"
-                  id="timer-start"
-                  onclick="app.startTimer()"
-                >
-                  <span class="icon">▶️</span>
-                  <span>スタート</span>
-                </button>
-                <button
-                  class="timer-btn stop"
-                  id="timer-stop"
-                  onclick="app.stopTimer()"
-                  style="display: none"
-                >
-                  <span class="icon">⏸️</span>
-                  <span>ストップ</span>
-                </button>
-                <button class="timer-btn reset" onclick="app.resetTimer()">
-                  <span class="icon">🔄</span>
-                  <span>リセット</span>
-                </button>
+          <div class="level-display">
+            <p>いまのレベル</p>
+            <div class="level-number" id="current-level">0</div>
+            <div class="level-breakdown" id="level-breakdown">
+              <div class="breakdown-item">
+                <span class="breakdown-label">れんしゅうじかん:</span>
+                <span class="breakdown-value" id="time-points">0pt</span>
               </div>
-            </div>
-            <div class="total-time">
-              <p>
-                これまでのれんしゅうじかん:
-                <span id="total-practice-time">0</span>ぷん
-              </p>
+              <div class="breakdown-item">
+                <span class="breakdown-label">できばえ:</span>
+                <span class="breakdown-value" id="performance-points">0pt</span>
+              </div>
+              <div class="breakdown-item">
+                <span class="breakdown-label">とりくみかた:</span>
+                <span class="breakdown-value" id="attitude-points">0pt</span>
+              </div>
             </div>
           </div>
           <div class="button-group">
