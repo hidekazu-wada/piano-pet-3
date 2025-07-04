@@ -49,6 +49,14 @@ class PianoPracticeApp {
       description:
         'おもしろい さるです。しんばるを たたいて あそぶのが だーいすき！とても かしこくて、いろんな ことを おぼえます。',
     },
+    pet7: {
+      id: 'pet7',
+      name: 'トランペットエレファント',
+      filename: 'monkey.mp4',
+      audioFilename: 'elephant-sound.mp3',
+      description:
+        'おおきな ぞうさんです。とらんぺっとの ような おおきな はなで ふんふん と おとを たてます。やさしくて おとなしい せいかくです。',
+    },
   };
 
   constructor() {
@@ -960,7 +968,7 @@ class PianoPracticeApp {
 
     const gachaButton = document.getElementById('gacha-button');
     const allCollected = this.isAllCharactersCollected();
-    
+
     // 全キャラクター収集時はガチャボタンを無効化
     if (allCollected) {
       gachaButton.disabled = true;
